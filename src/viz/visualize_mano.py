@@ -6,9 +6,13 @@ import numpy as np
 
 
 class ManoHandVisualizer:
-    def __init__(self, marker_publisher):
+    def __init__(self, marker_publisher, model):
         self.marker_publisher = marker_publisher
         self.markers = []
+        if model == "biomimic":
+            self.frame_id = "world"
+        else:
+            self.frame_id = "hand_root"
 
     def reset_markers(self):
         self.markers = []
@@ -26,7 +30,7 @@ class ManoHandVisualizer:
 
         # Create marker for joints
         joint_marker = Marker()
-        joint_marker.header.frame_id = "hand_root"
+        joint_marker.header.frame_id = self.frame_id
         joint_marker.header.stamp = stamp
         joint_marker.ns = "joints"
         joint_marker.type = Marker.POINTS
@@ -69,7 +73,7 @@ class ManoHandVisualizer:
         ]
 
         bone_marker = Marker()
-        bone_marker.header.frame_id = "hand_root"
+        bone_marker.header.frame_id = self.frame_id
         bone_marker.header.stamp = stamp
         bone_marker.ns = "bones"
         bone_marker.type = Marker.LINE_LIST
@@ -102,7 +106,7 @@ class ManoHandVisualizer:
         }
         for i, (axis_name, (axis_vector, color)) in enumerate(axes.items()):
             arrow_marker = Marker()
-            arrow_marker.header.frame_id = "hand_root"
+            arrow_marker.header.frame_id = self.frame_id
             arrow_marker.header.stamp = stamp
             arrow_marker.ns = "frame"
             arrow_marker.type = Marker.ARROW
