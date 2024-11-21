@@ -90,8 +90,6 @@ class Retargeter:
         os.chdir(prev_cwd)
 
         joint_parameter_names = self.chain.get_joint_parameter_names()
-        if hand_scheme == "biomimic":
-            joint_parameter_names.remove("root2palm")
         gc_tendons = GC_TENDONS
         self.n_joints = self.chain.n_joints
         self.n_tendons = len(
@@ -246,7 +244,7 @@ class Retargeter:
 
         joints = torch.from_numpy(joints).to(self.device)
 
-        mano_joints_dict = retarget_utils.get_mano_joints_dict(joints)
+        mano_joints_dict = retarget_utils.get_mano_joints_dict(joints, include_wrist=True)
 
         mano_fingertips = {}
         for finger, finger_joints in mano_joints_dict.items():
