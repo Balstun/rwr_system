@@ -35,9 +35,8 @@ def generate_launch_description():
                 parameters=[
                     {
                         "retarget/mjcf_filepath": os.path.join(
-                            get_package_share_directory("viz"),
-                            "models",
-                            "biomimic_hand_v3",
+                            get_package_share_directory("mujoco_sim"),
+                            "mjcf",
                             "Biomimic_hand_job.xml",
                         )
                     },
