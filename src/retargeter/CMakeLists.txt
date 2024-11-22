@@ -31,7 +31,7 @@ find_package(tf2_eigen REQUIRED)
 install(PROGRAMS
     retargeter_node.py
     remapper_node.py
-    plot_target_joint_angles.py
+    # plot_target_joint_angles.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -6,6 +6,7 @@ from torch.nn.functional import normalize
 import os
 import pytorch_kinematics as pk
 from .utils import retarget_utils
+from copy import deepcopy
 
 ######################################################
 #TODO: Implement the Retargeter class for your hand model
@@ -89,12 +90,14 @@ class Retargeter:
             )
         os.chdir(prev_cwd)
 
+        # From the MJCF file, it gets each join names
         joint_parameter_names = self.chain.get_joint_parameter_names()
         gc_tendons = GC_TENDONS
         self.n_joints = self.chain.n_joints
         self.n_tendons = len(
             GC_TENDONS
         )  # each tendon can be understand as the tendon drive by a motor individually
+
         self.joint_map = torch.zeros(self.n_joints, self.n_tendons).to(device)
         self.finger_to_tip = FINGER_TO_TIP
         self.tendon_names = []
@@ -109,10 +112,12 @@ class Retargeter:
                     weight * virtual_joint_weight
                 )
                 joint_names_check.append(tendon)
+
         assert set(joint_names_check) == set(
             joint_parameter_names
         ), "Joint names mismatch, please double check hand_scheme"
 
+        # Can we rewrite this to use only joint angles/actuators?
         self.gc_joints = torch.ones(self.n_tendons).to(self.device) * 15.0
         self.gc_joints.requires_grad_()
 
@@ -218,6 +223,7 @@ class Retargeter:
         warm: bool = True,
         opt_steps: int = 2,
         dynamic_keyvector_scaling: bool = False,
+        debug_dict=None,
     ):
         """
         Process the MANO joints and update the finger joint angles
@@ -246,46 +252,55 @@ class Retargeter:
 
         mano_joints_dict = retarget_utils.get_mano_joints_dict(joints, include_wrist=True)
 
+        # Thumb is correct until here
+
         mano_fingertips = {}
         for finger, finger_joints in mano_joints_dict.items():
+            if finger == "wrist":
+                continue
             mano_fingertips[finger] = finger_joints[[-1], :]
 
         mano_pps = {}
         for finger, finger_joints in mano_joints_dict.items():
+            if finger == "wrist":
+                continue
             mano_pps[finger] = finger_joints[[0], :]
 
-        mano_palm = torch.mean(
-            torch.cat([mano_pps["thumb"], mano_pps["pinky"]], dim=0).to(self.device),
-            dim=0,
-            keepdim=True,
-        )
+        # mano_palm = torch.mean(
+        #     torch.cat([mano_pps["thumb"], mano_pps["pinky"]], dim=0).to(self.device),
+        #     dim=0,
+        #     keepdim=True,
+        # )
+        mano_palm = mano_joints_dict["wrist"].reshape((-1, 3))
+
+        ## The palm is defined as the midpoint between the origin of the thumb and pinky. 
+        # Possible improvement would be to see if we can use the wrist itself or some other better origin vector to generatew the key vectors
 
         keyvectors_mano = retarget_utils.get_keyvectors(mano_fingertips, mano_palm)
-        # norms_mano = {k: torch.norm(v) for k, v in keyvectors_mano.items()}
-        # print(f"keyvectors_mano: {norms_mano}")
+
+        if debug_dict:
+            if "keyvec_mano" not in debug_dict.keys():
+                debug_dict["keyvec_mano"] = {}
+            debug_dict["keyvec_mano"]["start"] = [mano_palm]
+            debug_dict["keyvec_mano"]["end"] = mano_fingertips
+
+        mujoco_palm = []
+        mujoco_fingertips = []
 
         for step in range(opt_steps):
             chain_transforms = self.chain.forward_kinematics(
-                self.joint_map @ (self.gc_joints / (180 / np.pi))
+                # TODO: Can we directly replace everything with actuator values and optimize there?
+                self.joint_map @ (self.gc_joints / (180 / np.pi)) # Guess of tendon lengths and we compute the joint angles. NOT ACTUATOR ANGLES. 
             )
-            fingertips = {}
+            mujoco_fingertips = {}
             for finger, finger_tip in self.finger_to_tip.items():
-                fingertips[finger] = chain_transforms[finger_tip].transform_points(
+                mujoco_fingertips[finger] = chain_transforms[finger_tip].transform_points(
                     self.root
                 )
 
-            palm = (
-                chain_transforms[self.finger_to_base["thumb"]].transform_points(
-                    self.root
-                )
-                + chain_transforms[self.finger_to_base["pinky"]].transform_points(
-                    self.root
-                )
-            ) / 2
+            mujoco_palm = chain_transforms["palm"].transform_points(self.root)
 
-            keyvectors_faive = retarget_utils.get_keyvectors(fingertips, palm)
-            # norms_faive = {k: torch.norm(v) for k, v in keyvectors_faive.items()}
-            # print(f"keyvectors_faive: {norms_faive}")
+            keyvectors_faive = retarget_utils.get_keyvectors(mujoco_fingertips, mujoco_palm)
 
             loss = 0
 
@@ -315,12 +330,17 @@ class Retargeter:
                     torch.tensor(self.gc_limits_lower).to(self.device),
                     torch.tensor(self.gc_limits_upper).to(self.device),
                 )
-
         finger_joint_angles = self.gc_joints.detach().cpu().numpy()
+
+        if debug_dict:
+            if "keyvec_mujoco" not in debug_dict.keys():
+                debug_dict["keyvec_mujoco"] = {}
+            debug_dict["keyvec_mujoco"]["start"] = [mujoco_palm]
+            debug_dict["keyvec_mujoco"]["end"] = mujoco_fingertips
 
         print(f"Retarget time: {(time.time() - start_time) * 1000} ms")
 
-        return finger_joint_angles
+        return finger_joint_angles, debug_dict
 
     def retarget(self, joints, debug_dict=None):
         normalized_joint_pos, mano_center_and_rot = (
@@ -334,5 +354,5 @@ class Retargeter:
         )
         if debug_dict is not None:
             debug_dict["normalized_joint_pos"] = normalized_joint_pos
-        self.target_angles = self.retarget_finger_mano_joints(normalized_joint_pos)
+        self.target_angles, debug_dict = self.retarget_finger_mano_joints(normalized_joint_pos, debug_dict=debug_dict)
         return self.target_angles, debug_dict
