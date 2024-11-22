@@ -68,7 +68,7 @@ class Retargeter:
         self.finger_to_tip = FINGER_TO_TIP
         self.finger_to_base = FINGER_TO_BASE
         
-        self.num_active_keyvectors = 12 
+        self.num_active_keyvectors = 17 
         # TODO: Update to directly retrieve from the scheme
 
         prev_cwd = os.getcwd()
@@ -275,7 +275,7 @@ class Retargeter:
         ## The palm is defined as the midpoint between the origin of the thumb and pinky. 
         # Possible improvement would be to see if we can use the wrist itself or some other better origin vector to generatew the key vectors
         
-        keyvectors_mano = retarget_utils.get_keyvectors(mano_fingertips, mano_palm)
+        keyvectors_mano = retarget_utils.get_keyvectors(mano_pps, mano_fingertips, mano_palm)
 
         if debug_dict:
             if "keyvec_mano" not in debug_dict.keys():
@@ -296,10 +296,15 @@ class Retargeter:
                 mujoco_fingertips[finger] = chain_transforms[finger_tip].transform_points(
                     self.root
                 )
+            mujoco_finger_bases = {}
+            for finger, finger_base in self.finger_to_base.items():
+                mujoco_finger_bases[finger] = chain_transforms[finger_base].transform_points(
+                    self.root
+                )
 
             mujoco_palm = chain_transforms["palm"].transform_points(self.root)
 
-            keyvectors_faive = retarget_utils.get_keyvectors(mujoco_fingertips, mujoco_palm)
+            keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, mujoco_palm)
 
             loss = 0
 
