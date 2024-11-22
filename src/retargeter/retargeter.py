@@ -67,6 +67,9 @@ class Retargeter:
         self.gc_limits_upper = GC_LIMITS_UPPER
         self.finger_to_tip = FINGER_TO_TIP
         self.finger_to_base = FINGER_TO_BASE
+        
+        self.num_active_keyvectors = 12 
+        # TODO: Update to directly retrieve from the scheme
 
         prev_cwd = os.getcwd()
         model_path = (
@@ -127,13 +130,14 @@ class Retargeter:
 
         self.root = torch.zeros(1, 3).to(self.device)
 
-        self.loss_coeffs = torch.tensor([5.0, 5.0, 5.0, 5.0, 5.0]).to(self.device)
+        self.loss_coeffs = torch.tensor([5.0] * self.num_active_keyvectors).to(self.device)
         # TODO: Update loss_coeffs
 
         if use_scalar_distance_palm:
             self.use_scalar_distance = [False, True, True, True, True]
         else:
-            self.use_scalar_distance = [False, False, False, False, False]
+            self.use_scalar_distance = [False] * self.num_active_keyvectors
+        # TODO: Dynamically assign scalar distance based on the scheme (and active keyvectors)
 
         self.sanity_check()
         _chain_transforms = self.chain.forward_kinematics(
@@ -199,11 +203,6 @@ class Retargeter:
             torch.randn(self.chain.n_joints, device=self.chain.device)
         )
         for finger, base in self.finger_to_base.items():
-            print(
-                chain_transform1[base].transform_points(self.root),
-                chain_transform1[base].transform_points(self.root),
-                chain_transform1[base].transform_points(self.root),
-            )
             assert torch.allclose(
                 chain_transform1[base].transform_points(self.root),
                 chain_transform2[base].transform_points(self.root),
@@ -275,7 +274,7 @@ class Retargeter:
 
         ## The palm is defined as the midpoint between the origin of the thumb and pinky. 
         # Possible improvement would be to see if we can use the wrist itself or some other better origin vector to generatew the key vectors
-
+        
         keyvectors_mano = retarget_utils.get_keyvectors(mano_fingertips, mano_palm)
 
         if debug_dict:
