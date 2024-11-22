@@ -68,7 +68,7 @@ class Retargeter:
         self.finger_to_tip = FINGER_TO_TIP
         self.finger_to_base = FINGER_TO_BASE
         
-        self.num_active_keyvectors = 17 
+        self.num_active_keyvectors = 18 
         # TODO: Update to directly retrieve from the scheme
 
         prev_cwd = os.getcwd()

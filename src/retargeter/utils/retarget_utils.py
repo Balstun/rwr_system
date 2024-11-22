@@ -92,6 +92,7 @@ def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, 
         'middle_base_to_tip': fingertips['middle'] - finger_bases['middle'],
         'ring_base_to_tip': fingertips['ring'] - finger_bases['ring'],
         'pinky_base_to_tip': fingertips['pinky'] - finger_bases['pinky'],
+        'pinky_base_to_thumb_tip': fingertips['thumb'] - finger_bases['pinky'],
     }
 
 
