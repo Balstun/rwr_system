@@ -90,9 +90,13 @@ class RetargeterNode(Node):
 
             if "keyvec_mujoco" in debug_dict.keys():
                 keyvec_mujoco = debug_dict["keyvec_mujoco"]
-                start, end = keyvec_mujoco["start"][0].detach().cpu(), [t.detach().cpu().numpy() for t in keyvec_mujoco["end"].values()]
+                # start, end = keyvec_mujoco["start"][0].detach().cpu(), [t.detach().cpu().numpy() for t in keyvec_mujoco["end"].values()]
+                start, end = [], []
+                for start_pos, end_pos in zip(keyvec_mujoco["start"], keyvec_mujoco["end"]):
+                    start.append(start_pos.detach().cpu().numpy())
+                    end.append(end_pos.detach().cpu().numpy())
                 
-                st_np_arr = np.tile(start, (5, 1)).reshape((-1, 3))
+                st_np_arr = np.array(start).reshape((-1, 3))
                 end_np_arr = np.array(end).reshape((-1, 3))
                 mujoco_vecs = np.hstack((st_np_arr, end_np_arr))
                 self.publish_mujoco_vecs(mujoco_vecs)

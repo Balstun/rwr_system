@@ -275,7 +275,7 @@ class Retargeter:
         ## The palm is defined as the midpoint between the origin of the thumb and pinky. 
         # Possible improvement would be to see if we can use the wrist itself or some other better origin vector to generatew the key vectors
         
-        keyvectors_mano = retarget_utils.get_keyvectors(mano_pps, mano_fingertips, mano_palm)
+        keyvectors_data_mano, keyvectors_mano = retarget_utils.get_keyvectors(mano_pps, mano_fingertips, mano_palm)
 
         if debug_dict:
             if "keyvec_mano" not in debug_dict.keys():
@@ -304,7 +304,7 @@ class Retargeter:
 
             mujoco_palm = chain_transforms["palm"].transform_points(self.root)
 
-            keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, mujoco_palm)
+            keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, mujoco_palm)
 
             loss = 0
 
@@ -339,8 +339,8 @@ class Retargeter:
         if debug_dict:
             if "keyvec_mujoco" not in debug_dict.keys():
                 debug_dict["keyvec_mujoco"] = {}
-            debug_dict["keyvec_mujoco"]["start"] = [mujoco_palm]
-            debug_dict["keyvec_mujoco"]["end"] = mujoco_fingertips
+            debug_dict["keyvec_mujoco"]["start"] = [e[0] for e in keyvectors_data_faive.values()]
+            debug_dict["keyvec_mujoco"]["end"] = [e[1] for e in keyvectors_data_faive.values()]
 
         print(f"Retarget time: {(time.time() - start_time) * 1000} ms")
 

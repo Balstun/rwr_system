@@ -69,32 +69,38 @@ def get_mano_pps_batch(mano_joints_dict):
 
 
 def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, torch.Tensor], palm: torch.Tensor):
-    return {
-        "palm2thumb": fingertips["thumb"] - palm,
-        "palm2index": fingertips["index"] - palm,
-        "palm2middle": fingertips["middle"] - palm,
-        "palm2ring": fingertips["ring"] - palm,
-        "palm2pinky": fingertips["pinky"] - palm,
-        'thumb2index': fingertips['index'] - fingertips['thumb'],
-        'thumb2middle': fingertips['middle'] - fingertips['thumb'],
-        'thumb2ring': fingertips['ring'] - fingertips['thumb'],
-        'thumb2pinky': fingertips['pinky'] - fingertips['thumb'],
+
+    keyvectors_data = {
+        "palm2thumb": (palm, fingertips["thumb"]),
+        "palm2index": (palm, fingertips["index"]),
+        "palm2middle": (palm, fingertips["middle"]),
+        "palm2ring": (palm, fingertips["ring"]),
+        "palm2pinky": (palm, fingertips["pinky"]),
+        'thumb2index': (fingertips['thumb'], fingertips['index']),
+        'thumb2middle': (fingertips['thumb'], fingertips['middle']),
+        'thumb2ring': (fingertips['thumb'], fingertips['ring']),
+        'thumb2pinky': (fingertips['thumb'], fingertips['pinky']),
         # 'index2middle': fingertips['middle'] - fingertips['index'],
-        'index2ring': fingertips['ring'] - fingertips['index'],
+        'index2middle': (fingertips['index'], fingertips['middle']),
         # 'index2pinky': fingertips['pinky'] - fingertips['index'],
-        'middle2ring': fingertips['ring'] - fingertips['middle'],
+        'middle2ring': (fingertips['middle'], fingertips['ring']),
         # 'middle2pinky': fingertips['pinky'] - fingertips['middle'],
-        'ring2pinky': fingertips['pinky'] - fingertips['ring'],
+        'ring2pinky': (fingertips['ring'], fingertips['pinky']),
 
         # Define additional keyvectors for each finger: base to tip
-        'thumb_base_to_tip': fingertips['thumb'] - finger_bases['thumb'],
-        'index_base_to_tip': fingertips['index'] - finger_bases['index'],
-        'middle_base_to_tip': fingertips['middle'] - finger_bases['middle'],
-        'ring_base_to_tip': fingertips['ring'] - finger_bases['ring'],
-        'pinky_base_to_tip': fingertips['pinky'] - finger_bases['pinky'],
-        'pinky_base_to_thumb_tip': fingertips['thumb'] - finger_bases['pinky'],
+        'thumb_base_to_tip': (finger_bases['thumb'], fingertips['thumb']),
+        'index_base_to_tip': (fingertips['index'], fingertips['index']),
+        'middle_base_to_tip': (fingertips['middle'], fingertips['middle']),
+        'ring_base_to_tip': (fingertips['ring'], fingertips['ring']),
+        'pinky_base_to_tip': (finger_bases['pinky'], fingertips['pinky']),
+        'pinky_base_to_thumb_tip': (finger_bases['pinky'], fingertips['thumb']),
     }
-
+    
+    keyvectors = {}
+    for key, value in keyvectors_data.items():
+        start, end = value
+        keyvectors[key] = end - start
+    return keyvectors_data, keyvectors
 
 def rotation_matrix_z(angle):
     """
