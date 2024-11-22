@@ -39,6 +39,14 @@ def generate_launch_description():
                 ],
             ),
 
+            # REMAPPER NODE
+            Node(
+                package="retargeter",
+                executable="remapper_node.py",
+                name="remapper",
+                output="screen"
+            ),
+
 #             Node(
 #                 package='robot_state_publisher',
 #                 executable='robot_state_publisher',
