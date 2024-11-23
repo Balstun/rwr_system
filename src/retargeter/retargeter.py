@@ -68,7 +68,7 @@ class Retargeter:
         self.finger_to_tip = FINGER_TO_TIP
         self.finger_to_base = FINGER_TO_BASE
         
-        self.num_active_keyvectors = 18 
+        self.num_active_keyvectors = 5
         # TODO: Update to directly retrieve from the scheme
 
         prev_cwd = os.getcwd()
@@ -286,6 +286,8 @@ class Retargeter:
         mujoco_palm = []
         mujoco_fingertips = []
 
+        keyvector_losses_by_step = np.zeros((opt_steps, self.num_active_keyvectors, 2))
+
         for step in range(opt_steps):
             chain_transforms = self.chain.forward_kinematics(
                 # TODO: Can we directly replace everything with actuator values and optimize there?
@@ -307,21 +309,29 @@ class Retargeter:
             keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, mujoco_palm)
 
             loss = 0
+            keyvector_losses = [0] * self.num_active_keyvectors
 
             for i, (keyvector_faive, keyvector_mano) in enumerate(
                 zip(keyvectors_faive.values(), keyvectors_mano.values())
             ):
                 if not self.use_scalar_distance[i]:
-                    loss += (
-                        self.loss_coeffs[i]
-                        * torch.norm(keyvector_mano - keyvector_faive) ** 2
+                    keyvector_loss = self.loss_coeffs[i] * (
+                        torch.norm(keyvector_mano - keyvector_faive) * 2
                     )
+                    loss += (
+                        keyvector_loss
+                    )
+                    keyvector_losses[i] = [self.loss_coeffs[i].detach().cpu().numpy(), keyvector_loss.detach().cpu().numpy()]
+
                 else:
-                    loss += (
-                        self.loss_coeffs[i]
-                        * (torch.norm(keyvector_mano) - torch.norm(keyvector_faive))
-                        ** 2
+                    keyvector_loss = self.loss_coeffs[i] * (
+                        torch.norm(keyvector_mano - keyvector_faive) * 2
                     )
+                    loss += (
+                        keyvector_loss
+                    )
+                    keyvector_losses[i] = [self.loss_coeffs[i], keyvector_loss]
+            keyvector_losses_by_step[step] = keyvector_losses
 
             # print(f"step: {step} Loss: {loss}")
             self.scaling_factors_set = True
@@ -334,13 +344,23 @@ class Retargeter:
                     torch.tensor(self.gc_limits_lower).to(self.device),
                     torch.tensor(self.gc_limits_upper).to(self.device),
                 )
+        
+        if debug_dict:
+            debug_dict["keyvectors_loss"] = keyvector_losses_by_step
+
         finger_joint_angles = self.gc_joints.detach().cpu().numpy()
 
         if debug_dict:
             if "keyvec_mujoco" not in debug_dict.keys():
                 debug_dict["keyvec_mujoco"] = {}
-            debug_dict["keyvec_mujoco"]["start"] = [e[0] for e in keyvectors_data_faive.values()]
-            debug_dict["keyvec_mujoco"]["end"] = [e[1] for e in keyvectors_data_faive.values()]
+            # All these vectors are defined in the hand frame which is the center of the hand. 
+            # We need to transform them to the wrist frame.
+
+            start_vectors = [e[0] for e in keyvectors_data_faive.values()]
+            end_vectors = [e[1] for e in keyvectors_data_faive.values()]
+            
+            debug_dict["keyvec_mujoco"]["start"] = start_vectors
+            debug_dict["keyvec_mujoco"]["end"] = end_vectors
 
         print(f"Retarget time: {(time.time() - start_time) * 1000} ms")
 

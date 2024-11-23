@@ -53,6 +53,9 @@ class RetargeterNode(Node):
         self.mujoco_vec_pub = self.create_publisher(
             Float32MultiArray, "/retarget/mujoco_keyvecs", 10
         )
+        self.keyvec_loss_pub = self.create_publisher(
+            Float32MultiArray, "/retarget/keyvec_loss", 10
+        )
 
         self.debug = debug
         if self.debug:
@@ -102,6 +105,18 @@ class RetargeterNode(Node):
                 self.publish_mujoco_vecs(mujoco_vecs)
 
 
+            if "keyvectors_loss" in debug_dict.keys():
+                keyvectors_loss_per_step = debug_dict["keyvectors_loss"]
+                vec_id = 0
+                num_steps, num_vecs, _ = keyvectors_loss_per_step.shape
+
+                # Loss Propogation for one keyvector across 100 steps
+                keyvector_loss = np.zeros(num_steps)
+                for step_id in range(num_steps):
+                    keyvector_loss[step_id] = keyvectors_loss_per_step[step_id, vec_id, 1]
+                self.publish_keyvec_loss(keyvector_loss)
+
+            
             if self.debug:
                 self.mano_hand_visualizer.generate_hand_markers(
                     debug_dict["normalized_joint_pos"],
@@ -117,6 +132,9 @@ class RetargeterNode(Node):
         except Exception as e:
             print(f"Error in timer_publish_cb: {e}")
             pass
+
+    def publish_keyvec_loss(self, keyvector_loss_per_step):
+        self.keyvec_loss_pub.publish(numpy_to_float32_multiarray(keyvector_loss_per_step))
 
     def publish_mujoco_vecs(self, mujoco_vecs: NDArray[np.float32]):
         self.mujoco_vec_pub.publish(numpy_to_float32_multiarray(mujoco_vecs))

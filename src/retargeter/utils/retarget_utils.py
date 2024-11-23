@@ -71,29 +71,33 @@ def get_mano_pps_batch(mano_joints_dict):
 def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, torch.Tensor], palm: torch.Tensor):
 
     keyvectors_data = {
+        # Define keyvectors for the palm to each fingertip
         "palm2thumb": (palm, fingertips["thumb"]),
         "palm2index": (palm, fingertips["index"]),
         "palm2middle": (palm, fingertips["middle"]),
         "palm2ring": (palm, fingertips["ring"]),
         "palm2pinky": (palm, fingertips["pinky"]),
-        'thumb2index': (fingertips['thumb'], fingertips['index']),
-        'thumb2middle': (fingertips['thumb'], fingertips['middle']),
-        'thumb2ring': (fingertips['thumb'], fingertips['ring']),
-        'thumb2pinky': (fingertips['thumb'], fingertips['pinky']),
-        # 'index2middle': fingertips['middle'] - fingertips['index'],
-        'index2middle': (fingertips['index'], fingertips['middle']),
-        # 'index2pinky': fingertips['pinky'] - fingertips['index'],
-        'middle2ring': (fingertips['middle'], fingertips['ring']),
-        # 'middle2pinky': fingertips['pinky'] - fingertips['middle'],
-        'ring2pinky': (fingertips['ring'], fingertips['pinky']),
 
-        # Define additional keyvectors for each finger: base to tip
-        'thumb_base_to_tip': (finger_bases['thumb'], fingertips['thumb']),
-        'index_base_to_tip': (fingertips['index'], fingertips['index']),
-        'middle_base_to_tip': (fingertips['middle'], fingertips['middle']),
-        'ring_base_to_tip': (fingertips['ring'], fingertips['ring']),
-        'pinky_base_to_tip': (finger_bases['pinky'], fingertips['pinky']),
-        'pinky_base_to_thumb_tip': (finger_bases['pinky'], fingertips['thumb']),
+        # Define keyvectors for the thumb fingertip to other fingertips
+        # 'thumb2index': (fingertips['thumb'], fingertips['index']),
+        # 'thumb2middle': (fingertips['thumb'], fingertips['middle']),
+        # 'thumb2ring': (fingertips['thumb'], fingertips['ring']),
+        # 'thumb2pinky': (fingertips['thumb'], fingertips['pinky']),
+
+        # Define keyvectors for adjacent fingers (excluding thumb)
+        # 'index2middle': (fingertips['index'], fingertips['middle']),
+        # 'middle2ring': (fingertips['middle'], fingertips['ring']),
+        # 'ring2pinky': (fingertips['ring'], fingertips['pinky']),
+
+        # Define keyvectors for each finger: base to tip
+        # 'thumb_base_to_tip': (finger_bases['thumb'], fingertips['thumb']),
+        # 'index_base_to_tip': (fingertips['index'], fingertips['index']),
+        # 'middle_base_to_tip': (fingertips['middle'], fingertips['middle']),
+        # 'ring_base_to_tip': (fingertips['ring'], fingertips['ring']),
+        # 'pinky_base_to_tip': (finger_bases['pinky'], fingertips['pinky']),
+
+        # # Define additional keyvector from pinky base to thumb fingertip
+        # 'pinky_base_to_thumb_tip': (finger_bases['pinky'], fingertips['thumb']),
     }
     
     keyvectors = {}
