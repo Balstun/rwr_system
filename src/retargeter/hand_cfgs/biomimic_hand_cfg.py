@@ -58,7 +58,7 @@ FINGER_TO_BASE = {
     "index": "index_base",
     "middle": "middle_base",
     "ring": "ring_base",
-    "pinky": "pinky_base",
+    "pinky": "pinky_base_static",
 }
 
 GC_LIMITS_LOWER = np.array(
