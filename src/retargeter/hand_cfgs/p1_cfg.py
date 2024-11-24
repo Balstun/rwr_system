@@ -1,7 +1,11 @@
 import numpy as np
 from typing import Dict
+from dataclasses import dataclass
+
+from .hand_cfg import HandCfg
 
 # the information of the tendons in the hand. Each tendon represents a grouped actuation.
+
 GC_TENDONS = {
     "root2thumb_base": {},
     "thumb_base2pp": {},
@@ -70,3 +74,5 @@ GC_LIMITS_LOWER = np.array(
 GC_LIMITS_UPPER = np.array(
     [130.0, 60.0, 110.0, 95.0, 110.0, 95.0, 110.0, 95.0, 110.0, 95.0, 110.0]
 )
+
+P1HandCfg = HandCfg(GC_TENDONS, FINGER_TO_TIP, FINGER_TO_BASE, GC_LIMITS_LOWER, GC_LIMITS_UPPER)

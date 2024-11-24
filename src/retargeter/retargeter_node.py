@@ -150,7 +150,7 @@ class RetargeterNode(Node):
         marker.scale.x = 0.01  # Line width
 
         # Default color
-        default_color = ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)  # Blue
+        default_color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.5)  # Blue
 
         for vector in vectors:
             start, end, color_override = vector

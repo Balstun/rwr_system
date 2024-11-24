@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 import torch
 import numpy as np
@@ -68,43 +68,23 @@ def get_mano_pps_batch(mano_joints_dict):
     }
 
 
-def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, torch.Tensor], palm: torch.Tensor):
+def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, torch.Tensor], other_pts: Dict[str, torch.Tensor], apply_scaling=False):
 
-    keyvectors_data = {
+    keyvectors_data: Dict[str, Tuple[torch.Tensor, torch.Tensor, float]] = {
         # Define keyvectors for the palm to each fingertip
-        "palm2thumb": (palm, fingertips["thumb"]),
-        "pinky2thumb": (finger_bases["pinky"], fingertips["thumb"]),
-        "palm2index": (palm, fingertips["index"]),
-        "palm2middle": (palm, fingertips["middle"]),
-        "palm2ring": (palm, fingertips["ring"]),
-        "palm2pinky": (palm, fingertips["pinky"]),
-
-        # Define keyvectors for the thumb fingertip to other fingertips
-        # 'thumb2index': (fingertips['thumb'], fingertips['index']),
-        # 'thumb2middle': (fingertips['thumb'], fingertips['middle']),
-        # 'thumb2ring': (fingertips['thumb'], fingertips['ring']),
-        # 'thumb2pinky': (fingertips['thumb'], fingertips['pinky']),
-
-        # Define keyvectors for adjacent fingers (excluding thumb)
-        # 'index2middle': (fingertips['index'], fingertips['middle']),
-        # 'middle2ring': (fingertips['middle'], fingertips['ring']),
-        # 'ring2pinky': (fingertips['ring'], fingertips['pinky']),
-
-        # Define keyvectors for each finger: base to tip
-        # 'thumb_base_to_tip': (finger_bases['thumb'], fingertips['thumb']),
-        # 'index_base_to_tip': (fingertips['index'], fingertips['index']),
-        # 'middle_base_to_tip': (fingertips['middle'], fingertips['middle']),
-        # 'ring_base_to_tip': (fingertips['ring'], fingertips['ring']),
-        # 'pinky_base_to_tip': (finger_bases['pinky'], fingertips['pinky']),
-
-        # # Define additional keyvector from pinky base to thumb fingertip
-        # 'pinky_base_to_thumb_tip': (finger_bases['pinky'], fingertips['thumb']),
+        # vector_name: (source, end, scaling)
+        "pinky2thumb": (finger_bases["pinky"], fingertips["thumb"], 0.2),
+        "wrist2thumb": (other_pts["wrist"], fingertips["thumb"], 1.2),
+        "wrist2index": (other_pts["wrist"], fingertips["index"], 0.75),
+        "wrist2middle": (other_pts["wrist"], fingertips["middle"], 0.75),
+        "wrist2ring": (other_pts["wrist"], fingertips["ring"], 0.75),
+        "wrist2pinky": (other_pts["wrist"], fingertips["pinky"], 0.75),
     }
     
     keyvectors = {}
     for key, value in keyvectors_data.items():
-        start, end = value
-        keyvectors[key] = end - start
+        start, end, scale = value
+        keyvectors[key] = (end - start) * (scale if apply_scaling else 1)
     return keyvectors_data, keyvectors
 
 def rotation_matrix_z(angle):
