@@ -36,7 +36,7 @@ class RemapperNode(Node):
             14: 3, # thumb_mcp_angle (pip?)
             15: 0, # wrist_angle
         }
-        self.num_joints = 15
+        self.num_joints = 16
 
     def remap_callback(self, msg):
         target_joint_angles = msg.data
@@ -45,11 +45,12 @@ class RemapperNode(Node):
 
     def remap_joints(self, joints):
         remapped_joints = Float32MultiArray()
-        remapped_joints.data = [0.0] * (self.num_joints + 1)
+        remapped_joints.data = [0.0] * self.num_joints
 
         for i in range(self.num_joints):
             remapped_joints.data[i] = joints[self.joint_remapping[i]]
 
+        # DISABLE WRIST
         remapped_joints.data[self.num_joints] = 0
 
         return remapped_joints

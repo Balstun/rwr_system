@@ -52,7 +52,7 @@ class Retargeter:
         self.finger_to_tip: Dict[str, str] = self.hand_config.FINGER_TO_TIP
         self.finger_to_base: Dict[str, str] = self.hand_config.FINGER_TO_BASE
 
-        self.num_active_keyvectors = 6
+        self.num_active_keyvectors = 7
 
         prev_cwd = os.getcwd()
         model_path = (
@@ -260,7 +260,7 @@ class Retargeter:
         if debug_dict:
             if "keyvec_mano" not in debug_dict.keys():
                 debug_dict["keyvec_mano"] = {}
-            debug_dict["keyvec_mano"]["start"] = [mano_palm]
+            debug_dict["keyvec_mano"]["start"] = [other_mano_pts["wrist"]]
             debug_dict["keyvec_mano"]["end"] = mano_fingertips
 
         keyvector_losses_by_step = np.zeros((opt_steps, self.num_active_keyvectors, 2))
