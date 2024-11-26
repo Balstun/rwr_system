@@ -39,13 +39,7 @@ def generate_launch_description():
                 ],
             ),
 
-            # REMAPPER NODE
-            Node(
-                package="retargeter",
-                executable="direct_mapper_node.py",
-                name="direct_mapper",
-                output="screen"
-            ),
+            # TODO: Update/Build a Mapper Node to control faive_hand in MuJoCo (for visualization and debugging)
 
 #             Node(
 #                 package='robot_state_publisher',

@@ -58,8 +58,8 @@ FINGER_TO_TIP: Dict[str, str] = {
 # the mapping from fingername to the frame of the fingerbase (The base that fixed to the palm)
 # Use pytorch_kinematics.Chain.print_tree() to see the base frame
 FINGER_TO_BASE = {
-    "thumb": "thumb_base",
-    "index": "index_base",
+    "thumb": "thumb_base_static",
+    "index": "index_base_static",
     "middle": "middle_base",
     "ring": "ring_base",
     "pinky": "pinky_base_static",
@@ -105,5 +105,16 @@ GC_LIMITS_UPPER = np.array(
         90.0,  # pinky_pp2mp_virt
     ]
 )
+
+wrist_enabled = True
+if not wrist_enabled:
+    GC_TENDONS.pop("root2palm")
+    GC_LIMITS_LOWER = GC_LIMITS_LOWER[1:]
+    GC_LIMITS_UPPER = GC_LIMITS_UPPER[1:]
+
+ADDITIONAL_PARAMS = {
+    "wrist_enabled": wrist_enabled,
+    "num_joints": 16,
+}
 
 BiomimicHandCfg = HandCfg(GC_TENDONS, FINGER_TO_TIP, FINGER_TO_BASE, GC_LIMITS_LOWER, GC_LIMITS_UPPER)

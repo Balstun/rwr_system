@@ -75,11 +75,16 @@ def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, 
         # vector_name: (source, end, scaling)
         "pinky2thumb": (finger_bases["pinky"], fingertips["thumb"], 0.2),
         "pinkyBase2pinkyTip": (finger_bases["pinky"], fingertips["pinky"], 0.5),
-        "wrist2thumb": (other_pts["wrist"], fingertips["thumb"], 1.0),
+        "ringBase2ringTip": (finger_bases["ring"], fingertips["ring"], 0.5),
+        "middleBase2middleTip": (finger_bases["middle"], fingertips["middle"], 0.5),
+        "indexBase2indexTip": (finger_bases["index"], fingertips["index"], 0.5),
+        "thumbBase2thumbTip": (finger_bases["thumb"], fingertips["thumb"], 0.2),
+        "wrist2thumb": (other_pts["wrist"], fingertips["thumb"], 2.0),
         "wrist2index": (other_pts["wrist"], fingertips["index"], 0.5),
         "wrist2middle": (other_pts["wrist"], fingertips["middle"], 0.5),
         "wrist2ring": (other_pts["wrist"], fingertips["ring"], 0.5),
         "wrist2pinky": (other_pts["wrist"], fingertips["pinky"], 0.5),
+        "thumbTip2indexTip": (fingertips["thumb"], fingertips["index"], 0.2),
     }
     
     keyvectors = {}

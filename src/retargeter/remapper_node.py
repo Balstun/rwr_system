@@ -47,11 +47,16 @@ class RemapperNode(Node):
         remapped_joints = Float32MultiArray()
         remapped_joints.data = [0.0] * self.num_joints
 
-        for i in range(self.num_joints):
-            remapped_joints.data[i] = joints[self.joint_remapping[i]]
+        wrist_enabled = True # Wrist 
+        # TODO: Enable as a parameter within the retargeter/scheme
 
-        # DISABLE WRIST
-        remapped_joints.data[self.num_joints] = 0
+        for i in range(self.num_joints):
+            if wrist_enabled:
+                remapped_joints.data[i] = joints[self.joint_remapping[i]]
+            else:
+                if i == self.num_joints - 1:
+                    continue
+                remapped_joints.data[i] = joints[self.joint_remapping[i] - 1]
 
         return remapped_joints
 

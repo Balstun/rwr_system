@@ -2,6 +2,10 @@
     <compiler angle="radian"/>
     <include file="faive_metadata_p4.xml"/>
     <worldbody>
+        <camera name="front_view" pos="0.018 0.623 0.372" xyaxes="-1.000 0.029 -0.000 -0.015 -0.536 0.844"/>
+        <camera name="left_view" pos="0.707 0.053 0.177" xyaxes="-0.073 0.997 0.000 -0.271 -0.020 0.962"/>
+        <camera name="right_view" pos="-0.685 -0.040 0.247" xyaxes="0.060 -0.998 -0.000 0.365 0.022 0.931"/>
+        <camera name="back_view" pos="-0.000 -0.520 0.498" xyaxes="1.000 -0.000 0.000 0.000 0.707 0.707"/>
         <include file="faive_structure_p4.xml"/>
     </worldbody>
 </mujoco>
