@@ -8,9 +8,9 @@ import os
 import pytorch_kinematics as pk
 from .utils import retarget_utils
 
-from hand_cfgs.biomimic_hand_cfg import BiomimicHandCfg
-from hand_cfgs.p1_cfg import P1HandCfg
-from hand_cfgs.p4_cfg import P4HandCfg
+from .hand_cfgs.biomimic_hand_cfg import BiomimicHandCfg
+from .hand_cfgs.p1_cfg import P1HandCfg
+from .hand_cfgs.p4_cfg import P4HandCfg
 
 class Retargeter:
     """
