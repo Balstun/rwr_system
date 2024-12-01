@@ -52,7 +52,7 @@ class Retargeter:
         self.finger_to_tip: Dict[str, str] = self.hand_config.FINGER_TO_TIP
         self.finger_to_base: Dict[str, str] = self.hand_config.FINGER_TO_BASE
 
-        self.num_active_keyvectors = 12
+        self.num_active_keyvectors = 11
 
         prev_cwd = os.getcwd()
         model_path = (
@@ -324,7 +324,7 @@ class Retargeter:
         
         if debug_dict:
             debug_dict["keyvectors_loss"] = keyvector_losses_by_step
-
+                
         finger_joint_angles = self.gc_joints.detach().cpu().numpy()
 
         if debug_dict:

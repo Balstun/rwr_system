@@ -68,7 +68,7 @@ def get_mano_pps_batch(mano_joints_dict):
     }
 
 
-def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, torch.Tensor], other_pts: Dict[str, torch.Tensor], apply_scaling=False):
+def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, torch.Tensor], other_pts: Dict[str, torch.Tensor], apply_scaling=True):
 
     keyvectors_data: Dict[str, Tuple[torch.Tensor, torch.Tensor, float]] = {
         # Define keyvectors for the palm to each fingertip
@@ -79,12 +79,12 @@ def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, 
         "middleBase2middleTip": (finger_bases["middle"], fingertips["middle"], 0.5),
         "indexBase2indexTip": (finger_bases["index"], fingertips["index"], 0.5),
         "thumbBase2thumbTip": (finger_bases["thumb"], fingertips["thumb"], 0.2),
-        "wrist2thumb": (other_pts["wrist"], fingertips["thumb"], 2.0),
+        "wrist2thumb": (other_pts["wrist"], fingertips["thumb"], 0.2),
         "wrist2index": (other_pts["wrist"], fingertips["index"], 0.5),
         "wrist2middle": (other_pts["wrist"], fingertips["middle"], 0.5),
         "wrist2ring": (other_pts["wrist"], fingertips["ring"], 0.5),
         "wrist2pinky": (other_pts["wrist"], fingertips["pinky"], 0.5),
-        "thumbTip2indexTip": (fingertips["thumb"], fingertips["index"], 0.2),
+        # "thumbTip2indexTip": (fingertips["thumb"], fingertips["index"], 0.2),
     }
     
     keyvectors = {}

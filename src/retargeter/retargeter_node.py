@@ -113,7 +113,7 @@ class RetargeterNode(Node):
                 # Loss Propogation for one keyvector across 100 steps
                 keyvector_loss = np.zeros(num_steps)
                 for step_id in range(num_steps):
-                    keyvector_loss[step_id] = keyvectors_loss_per_step[step_id, vec_id, 1]
+                    keyvector_loss[step_id] = keyvectors_loss_per_step[step_id, vec_id, 0]
                 self.publish_keyvec_loss(keyvector_loss)
 
             

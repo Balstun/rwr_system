@@ -60,8 +60,8 @@ FINGER_TO_TIP: Dict[str, str] = {
 FINGER_TO_BASE = {
     "thumb": "thumb_base_static",
     "index": "index_base_static",
-    "middle": "middle_base",
-    "ring": "ring_base",
+    "middle": "middle_base_static",
+    "ring": "ring_base_static",
     "pinky": "pinky_base_static",
 }
 
@@ -88,7 +88,7 @@ GC_LIMITS_LOWER = np.array(
 GC_LIMITS_UPPER = np.array(
     [
         45.0,  # root2palm_base
-        70.0,  # root2thumb_base
+        90.0,  # root2thumb_base
         45.0,  # thumb_base2pp
         90.0,  # thumb_pp2mp_virt
         30.0,  # index_base2adb_virt
