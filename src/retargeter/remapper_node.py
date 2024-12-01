@@ -57,7 +57,7 @@ class RemapperNode(Node):
                 if i == self.num_joints - 1:
                     continue
                 remapped_joints.data[i] = joints[self.joint_remapping[i] - 1]
-
+        remapped_joints.data[-1] = 0.0
         return remapped_joints
 
 def main(args=None):
