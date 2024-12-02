@@ -35,6 +35,7 @@ install(PROGRAMS
 # install the launch file
 install(DIRECTORY
   launch
+  cfgs
   DESTINATION share/${PROJECT_NAME}
 )
 

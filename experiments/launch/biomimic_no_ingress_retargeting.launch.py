@@ -33,6 +33,20 @@ def generate_launch_description():
                             "Biomimic_hand_job.xml",
                         )
                     },
+                    {
+                        "retarget/retargeter_cfg": os.path.join(
+                            get_package_share_directory("experiments"),
+                            "cfgs",
+                            "retargeter_cfgs_biomimic.yaml",
+                        ),
+                    },
+                    {
+                        "retarget/mano_adjustments": os.path.join(
+                            get_package_share_directory("experiments"),
+                            "cfgs",
+                            "retargeter_adjustment.yaml"
+                        ),
+                    },
                     {"retarget/hand_scheme": "biomimic"},
                     {"debug": True},
                 ],

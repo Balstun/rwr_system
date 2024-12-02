@@ -21,6 +21,8 @@ class RetargeterNode(Node):
         self.declare_parameter("retarget/mjcf_filepath", rclpy.Parameter.Type.STRING)
         self.declare_parameter("retarget/urdf_filepath", rclpy.Parameter.Type.STRING)
         self.declare_parameter("retarget/hand_scheme", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("retarget/retargeter_cfg", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("retarget/mano_adjustments", rclpy.Parameter.Type.STRING)
         self.declare_parameter("debug", rclpy.Parameter.Type.BOOL)
 
         try:
@@ -35,13 +37,22 @@ class RetargeterNode(Node):
         hand_scheme = self.get_parameter("retarget/hand_scheme").value
         debug = self.get_parameter("debug").value
 
+        retargeter_cfg = self.get_parameter("retarget/retargeter_cfg").value
+        print(retargeter_cfg)
+        if retargeter_cfg == "":
+            retargeter_cfg = None
+
+        mano_adjustments = self.get_parameter("retarget/mano_adjustments").value
+        if mano_adjustments == "":
+            mano_adjustments = None
+
         # subscribe to ingress topics
         self.ingress_mano_sub = self.create_subscription(
             Float32MultiArray, "/ingress/mano", self.ingress_mano_cb, 10
         )
 
         self.retargeter = Retargeter(
-            device="cpu",  mjcf_filepath= mjcf_filepath, urdf_filepath=urdf_filepath, hand_scheme=hand_scheme
+            device="cpu",  mjcf_filepath= mjcf_filepath, urdf_filepath=urdf_filepath, hand_scheme=hand_scheme, retargeter_cfg=retargeter_cfg, mano_adjustments=mano_adjustments
         )
 
         self.joints_pub = self.create_publisher(

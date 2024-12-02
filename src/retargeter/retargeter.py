@@ -7,14 +7,21 @@ import numpy as np
 import os
 import pytorch_kinematics as pk
 from .utils import retarget_utils
-
+import yaml
 from .hand_cfgs.biomimic_hand_cfg import BiomimicHandCfg
 from .hand_cfgs.p1_cfg import P1HandCfg
 from .hand_cfgs.p4_cfg import P4HandCfg
+from typing import Union
+from scipy.spatial.transform import Rotation
 
 class Retargeter:
     """
     Please note that the computed joint angles of the rolling joints are only half of the two joints combined.
+    retargete_r_cfg is a dictionary of the retargeter algorithm. Including the following options:
+        lr: learning rate
+        use_scalar_distance_palm: whether to use scalar distance for palm
+        loss_coeffs: (5,) loss coefficients for each fingertip
+        joint_regularizers: tuples (joint_name, zero_value, weight) for regularizing joints to zero
     """
 
     def __init__(
@@ -24,8 +31,8 @@ class Retargeter:
         mjcf_filepath: str | None = None,
         sdf_filepath: str | None = None,
         device: str = "cpu",
-        lr: float = 2.5,
-        use_scalar_distance_palm: bool = False,
+        mano_adjustments: Union[str, dict] = None,
+        retargeter_cfg: Union[str, dict] = None,
     ) -> None:
         assert (
             int(urdf_filepath is not None)
@@ -52,7 +59,33 @@ class Retargeter:
         self.finger_to_tip: Dict[str, str] = self.hand_config.FINGER_TO_TIP
         self.finger_to_base: Dict[str, str] = self.hand_config.FINGER_TO_BASE
 
-        self.num_active_keyvectors = 11
+        if mano_adjustments is None:
+            self.mano_adjustments = {}
+        elif isinstance(mano_adjustments, dict):
+            pass
+        elif isinstance(mano_adjustments, str):
+            with open(mano_adjustments, "r") as f:
+                self.mano_adjustments = yaml.safe_load(f)
+        
+        if retargeter_cfg is None:
+            self.retargeter_cfg = {
+                "lr": 2.5,
+                "use_scalar_distance_palm": False,
+                "loss_coeffs": [5.0, 5.0, 5.0, 5.0, 5.0],
+                "joint_regularizers": [],
+            }
+        elif isinstance(retargeter_cfg, dict):
+            self.retargeter_cfg = retargeter_cfg
+        elif isinstance(retargeter_cfg, str):
+            with open(retargeter_cfg, "r") as f:
+                self.retargeter_cfg = yaml.safe_load(f)
+
+        self.lr = self.retargeter_cfg["lr"]
+        self.use_scalar_distance_palm = self.retargeter_cfg["use_scalar_distance_palm"]
+        self.loss_coeffs = torch.tensor(self.retargeter_cfg["loss_coeffs"]).to(device)            
+        self.joint_regularizers = self.retargeter_cfg["joint_regularizers"]
+
+        self.num_active_keyvectors = 10
 
         prev_cwd = os.getcwd()
         model_path = (
@@ -76,9 +109,8 @@ class Retargeter:
             )
         os.chdir(prev_cwd)
 
-        # From the MJCF file, it gets each join names
+        # From the MJCF file, it gets each joint names
         joint_parameter_names = self.chain.get_joint_parameter_names()
-        # TODO: Automate wrist removal upon exclusion of wrist from retargeter
 
         gc_tendons = self.hand_config.GC_TENDONS
         self.n_joints = self.chain.n_joints
@@ -105,20 +137,24 @@ class Retargeter:
             joint_parameter_names
         ), "Joint names mismatch, please double check hand_scheme"
 
-        # Can we rewrite this to use only joint angles/actuators?
+        # Initialize the gc_joints tensor
         self.gc_joints = torch.ones(self.n_tendons).to(self.device) * 15.0
         self.gc_joints.requires_grad_()
 
-        self.lr = lr
+        self.regularizer_zeros = torch.zeros(self.n_tendons).to(self.device)
+        self.regularizer_weights = torch.zeros(self.n_tendons).to(self.device)
+        for joint_name, zero_value, weight in self.joint_regularizers:
+            self.regularizer_zeros[self.tendon_names.index(joint_name)] = zero_value
+            self.regularizer_weights[self.tendon_names.index(joint_name)] = weight
+
+        # Initialize the optimizer 
         # self.opt = torch.optim.Adam([self.gc_joints], lr=self.lr)
         self.opt = torch.optim.RMSprop([self.gc_joints], lr=self.lr)
 
         self.root = torch.zeros(1, 3).to(self.device)
 
-        self.loss_coeffs = torch.tensor([5.0] * self.num_active_keyvectors).to(self.device)
-        # TODO: Update loss_coeffs
-
-        if use_scalar_distance_palm:
+        # Apply scalar distances (if active)
+        if self.use_scalar_distance_palm:
             self.use_scalar_distance = [False, True, True, True, True]
         else:
             self.use_scalar_distance = [False] * self.num_active_keyvectors
@@ -200,10 +236,11 @@ class Retargeter:
 
     def retarget_finger_mano_joints(
         self,
-        joints: torch.Tensor,
+        joints: np.array,
         warm: bool = True,
         opt_steps: int = 2,
         debug_dict=None,
+        # dynamic_keyvector_scaling: bool = False,
     ):
         """
         Process the MANO joints and update the finger joint angles
@@ -250,14 +287,21 @@ class Retargeter:
             keepdim=True,
         )
 
+        mano_knuckle_points = {}
+        for finger, finger_joints in mano_joints_dict.items():
+            if finger == "wrist" or finger == "thumb":
+                continue
+            mano_knuckle_points[finger] = finger_joints[[2], :]
+
         other_mano_pts = {
             "palm": mano_palm,
-            "wrist": mano_joints_dict["wrist"].reshape((-1, 3))
+            "wrist": mano_joints_dict["wrist"].reshape((-1, 3)),
+            "index_mano": mano_knuckle_points["index"]
         }
 
         # The palm is defined as the midpoint between the origin of the thumb and pinky. 
         # Possible improvement would be to see if we can use the wrist itself or some other better origin vector to generatew the key vectors
-        _, keyvectors_mano = retarget_utils.get_keyvectors(mano_pps, mano_fingertips, other_mano_pts)
+        _, keyvectors_mano = retarget_utils.get_keyvectors(mano_pps, mano_fingertips, other_mano_pts, apply_scaling=False)
 
         if debug_dict:
             if "keyvec_mano" not in debug_dict.keys():
@@ -288,7 +332,7 @@ class Retargeter:
                 "wrist": chain_transforms["palm"].transform_points(self.root)
             }
 
-            keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, other_mujoco_pts, apply_scaling=True)
+            keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, other_mujoco_pts, apply_scaling=False)
 
             loss: torch.Tensor = torch.tensor(0.0)
             keyvector_losses = [[]] * self.num_active_keyvectors
@@ -305,6 +349,10 @@ class Retargeter:
                 keyvector_losses[i] = [self.loss_coeffs[i].detach().cpu().numpy(), keyvector_loss.detach().cpu().numpy()]
 
             keyvector_losses_by_step[step] = keyvector_losses
+
+            # loss += torch.sum(
+            #     self.regularizer_weights * (self.gc_joints - self.regularizer_zeros) ** 2
+            # )
 
             self.scaling_factors_set = True
             self.opt.zero_grad()
@@ -338,10 +386,73 @@ class Retargeter:
 
         return finger_joint_angles, debug_dict
 
+    
+    def adjust_mano_fingers(self, joints):
+        # Initialize mano_adjustments dictionary
+        mano_adjustments = self.mano_adjustments
+
+        # Get the joints per finger
+        joints_dict = retarget_utils.get_mano_joints_dict(
+            joints, include_wrist=True, batch_processing=False
+        )
+
+        # Initialize adjusted joints dictionary
+        adjusted_joints_dict = {}
+
+        # Process each finger
+        for finger in ["thumb", "index", "middle", "ring", "pinky"]:
+            # Original joints for the finger
+            finger_joints = joints_dict[finger]  # Shape: (n_joints, 3)
+
+            if  mano_adjustments.get(finger) is None:
+                adjusted_joints_dict[finger] = finger_joints
+                continue
+            # Adjustments for the finger
+            adjustments = mano_adjustments[finger]
+            translation = adjustments.get("translation", np.zeros(3))  # (3,)
+            rotation_angles = adjustments.get("rotation", np.zeros(3))  # (3,)
+            scale = adjustments.get("scale", np.ones(3))  # (3,)
+
+            # Scaling in the finger base frame
+            x_base = finger_joints[0]  # Base joint position (3,)
+            x_local = finger_joints - x_base  # Local coordinates (n_joints, 3)
+            x_local_scaled = x_local * scale  # Apply scaling
+
+            # Rotation around base joint in palm frame
+            rot = Rotation.from_euler("xyz", rotation_angles, degrees=False)
+            R_matrix = rot.as_matrix()  # Rotation matrix (3,3)
+            x_local_rotated = x_local_scaled @ R_matrix.T  # Apply rotation
+            finger_joints_rotated = x_base + x_local_rotated  # Rotated positions
+
+            # Translation in palm frame
+            finger_joints_adjusted = finger_joints_rotated + translation  # Adjusted positions
+
+            # Store adjusted joints
+            adjusted_joints_dict[finger] = finger_joints_adjusted
+
+        # Keep the wrist as is
+        adjusted_joints_dict["wrist"] = joints_dict["wrist"]
+
+        # Concatenate adjusted joints
+        joints = np.concatenate(
+            [
+                adjusted_joints_dict["wrist"].reshape(1, -1),
+                adjusted_joints_dict["thumb"],
+                adjusted_joints_dict["index"],
+                adjusted_joints_dict["middle"],
+                adjusted_joints_dict["ring"],
+                adjusted_joints_dict["pinky"],
+            ],
+            axis=0,
+        )
+
+        return joints
+    
     def retarget(self, joints, debug_dict=None):
         normalized_joint_pos, mano_center_and_rot = (
             retarget_utils.normalize_points_to_hands_local(joints)
         )
+        normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
         normalized_joint_pos = (
             normalized_joint_pos @ self.model_rotation.T + self.model_center
         )
