@@ -78,7 +78,6 @@ class Retargeter:
 
         # From the MJCF file, it gets each join names
         joint_parameter_names = self.chain.get_joint_parameter_names()
-        # joint_parameter_names.remove("root2palm")
         # TODO: Automate wrist removal upon exclusion of wrist from retargeter
 
         gc_tendons = self.hand_config.GC_TENDONS
@@ -269,12 +268,9 @@ class Retargeter:
         keyvector_losses_by_step = np.zeros((opt_steps, self.num_active_keyvectors, 2))
         keyvectors_data_faive = {}
 
-        self.gc_joints_with_zeroes = self.gc_joints.clone()
-        self.gc_joints_with_zeroes[0] = 0.0
-
         for step in range(opt_steps):
             chain_transforms = self.chain.forward_kinematics(
-                self.joint_map @ (self.gc_joints_with_zeroes / (180 / np.pi)) # Guess of tendon lengths and we compute the joint angles. NOT ACTUATOR ANGLES. 
+                self.joint_map @ (self.gc_joints / (180 / np.pi)) # Guess of tendon lengths and we compute the joint angles. NOT ACTUATOR ANGLES. 
             )
             mujoco_fingertips = {}
             for finger, finger_tip in self.finger_to_tip.items():
@@ -312,8 +308,7 @@ class Retargeter:
 
             self.scaling_factors_set = True
             self.opt.zero_grad()
-            loss.backward(retain_graph=True)
-            self.gc_joints.grad[0] = 0.0
+            loss.backward()
             self.opt.step()
             with torch.no_grad():
                 self.gc_joints[:] = torch.clamp(
