@@ -9,5 +9,6 @@ class HandCfg:
     GC_TENDONS: Dict[str, Any]
     FINGER_TO_TIP: Dict[str, str]
     FINGER_TO_BASE: Dict[str, str]
+    FINGER_TO_KNUCKLE: Dict[str, str]
     GC_LIMITS_LOWER: NDArray[np.float32]
     GC_LIMITS_UPPER: NDArray[np.float32]

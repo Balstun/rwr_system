@@ -56,6 +56,14 @@ FINGER_TO_BASE = {
     "pinky": "pinky_pp_virt",
 }
 
+FINGER_TO_KNUCKLE = {
+    "thumb": "thumb_dp",
+    "index": "index_dp",
+    "middle": "middle_dp",
+    "ring": "ring_dp",
+    "pinky": "pinky_dp",
+}
+
 GC_LIMITS_LOWER = np.array(
     [
         0.0,
@@ -75,4 +83,4 @@ GC_LIMITS_UPPER = np.array(
     [130.0, 60.0, 110.0, 95.0, 110.0, 95.0, 110.0, 95.0, 110.0, 95.0, 110.0]
 )
 
-P1HandCfg = HandCfg(GC_TENDONS, FINGER_TO_TIP, FINGER_TO_BASE, GC_LIMITS_LOWER, GC_LIMITS_UPPER)
+P1HandCfg = HandCfg(GC_TENDONS, FINGER_TO_TIP, FINGER_TO_BASE, FINGER_TO_KNUCKLE, GC_LIMITS_LOWER, GC_LIMITS_UPPER)

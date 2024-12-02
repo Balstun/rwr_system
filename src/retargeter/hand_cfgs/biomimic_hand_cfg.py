@@ -64,6 +64,14 @@ FINGER_TO_BASE = {
     "pinky": "pinky_base",
 }
 
+FINGER_TO_KNUCKLE = {
+    "thumb": "thumb_dp_virt",
+    "index": "index_dp_adapter_virt",
+    "middle": "middle_dp_adapter_virt",
+    "ring": "ring_dp_adapter_virt",
+    "pinky": "pinky_dp_adapter_virt",
+}
+
 GC_LIMITS_LOWER = np.array(
     [
         0.0,  # root2thumb_base
@@ -103,4 +111,4 @@ GC_LIMITS_UPPER = np.array(
     ]
 )
 
-BiomimicHandCfg = HandCfg(GC_TENDONS, FINGER_TO_TIP, FINGER_TO_BASE, GC_LIMITS_LOWER, GC_LIMITS_UPPER)
+BiomimicHandCfg = HandCfg(GC_TENDONS, FINGER_TO_TIP, FINGER_TO_BASE, FINGER_TO_KNUCKLE, GC_LIMITS_LOWER, GC_LIMITS_UPPER)

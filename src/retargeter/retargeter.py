@@ -58,6 +58,7 @@ class Retargeter:
         self.gc_limits_upper: NDArray[np.float32] = self.hand_config.GC_LIMITS_UPPER
         self.finger_to_tip: Dict[str, str] = self.hand_config.FINGER_TO_TIP
         self.finger_to_base: Dict[str, str] = self.hand_config.FINGER_TO_BASE
+        self.finger_to_knuckle: Dict[str, str] = self.hand_config.FINGER_TO_KNUCKLE
 
         if mano_adjustments is None:
             self.mano_adjustments = {}
@@ -85,7 +86,7 @@ class Retargeter:
         self.loss_coeffs = torch.tensor(self.retargeter_cfg["loss_coeffs"]).to(device)            
         self.joint_regularizers = self.retargeter_cfg["joint_regularizers"]
 
-        self.num_active_keyvectors = 10
+        self.num_active_keyvectors = 16
 
         prev_cwd = os.getcwd()
         model_path = (
@@ -291,7 +292,7 @@ class Retargeter:
         for finger, finger_joints in mano_joints_dict.items():
             if finger == "wrist" or finger == "thumb":
                 continue
-            mano_knuckle_points[finger] = finger_joints[[2], :]
+            mano_knuckle_points[finger + "_knuckle"] = finger_joints[[2], :]
 
         other_mano_pts = {
             "palm": mano_palm,
@@ -326,11 +327,17 @@ class Retargeter:
                 mujoco_finger_bases[finger] = chain_transforms[finger_base].transform_points(
                     self.root
                 )
+            mujoco_finger_knuckles = {}
+            for finger, finger_knuckle in self.finger_to_knuckle.items():
+                mujoco_finger_knuckles[finger + "_knuckle"] = chain_transforms[finger_knuckle].transform_points(
+                    self.root
+                )
 
             other_mujoco_pts = {
                 "palm": chain_transforms["palm"].transform_points(self.root), # TODO FIX
                 "wrist": chain_transforms["palm"].transform_points(self.root)
             }
+            other_mujoco_pts.update(mujoco_finger_knuckles)
 
             keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, other_mujoco_pts, apply_scaling=True)
 
