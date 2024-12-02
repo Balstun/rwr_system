@@ -38,7 +38,6 @@ class RetargeterNode(Node):
         debug = self.get_parameter("debug").value
 
         retargeter_cfg = self.get_parameter("retarget/retargeter_cfg").value
-        print(retargeter_cfg)
         if retargeter_cfg == "":
             retargeter_cfg = None
 

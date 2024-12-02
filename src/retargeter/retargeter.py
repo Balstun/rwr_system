@@ -296,8 +296,8 @@ class Retargeter:
         other_mano_pts = {
             "palm": mano_palm,
             "wrist": mano_joints_dict["wrist"].reshape((-1, 3)),
-            "index_mano": mano_knuckle_points["index"]
         }
+        other_mano_pts.update(mano_knuckle_points)
 
         # The palm is defined as the midpoint between the origin of the thumb and pinky. 
         # Possible improvement would be to see if we can use the wrist itself or some other better origin vector to generatew the key vectors
@@ -332,7 +332,7 @@ class Retargeter:
                 "wrist": chain_transforms["palm"].transform_points(self.root)
             }
 
-            keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, other_mujoco_pts, apply_scaling=False)
+            keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, other_mujoco_pts, apply_scaling=True)
 
             loss: torch.Tensor = torch.tensor(0.0)
             keyvector_losses = [[]] * self.num_active_keyvectors
