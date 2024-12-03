@@ -66,10 +66,10 @@ FINGER_TO_BASE = {
 
 FINGER_TO_KNUCKLE = {
     "thumb": "thumb_dp_virt",
-    "index": "index_dp_adapter_virt",
-    "middle": "middle_dp_adapter_virt",
-    "ring": "ring_dp_adapter_virt",
-    "pinky": "pinky_dp_adapter_virt",
+    "index": "index_mp_link_virt",
+    "middle": "middle_mp_link_virt",
+    "ring": "ring_mp_link_virt",
+    "pinky": "pinky_mp_link_virt",
 }
 
 GC_LIMITS_LOWER = np.array(

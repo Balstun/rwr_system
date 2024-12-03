@@ -315,6 +315,9 @@ class Retargeter:
         keyvector_losses_by_step = np.zeros((opt_steps, self.num_active_keyvectors, 2))
         keyvectors_data_faive = {}
 
+        start_vectors_untuned = []
+        end_vectors_untuned = []
+
         for step in range(opt_steps):
             chain_transforms = self.chain.forward_kinematics(
                 self.joint_map @ (self.gc_joints / (180 / np.pi)) # Guess of tendon lengths and we compute the joint angles. NOT ACTUATOR ANGLES. 
@@ -342,6 +345,9 @@ class Retargeter:
             other_mujoco_pts.update(mujoco_finger_knuckles)
 
             keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, other_mujoco_pts, apply_scaling=False)
+            if step == 0:
+                start_vectors_untuned = [e[0] for e in keyvectors_data_faive.values()]
+                end_vectors_untuned = [e[1] for e in keyvectors_data_faive.values()]
 
             loss: torch.Tensor = torch.tensor(0.0)
             keyvector_losses = [[]] * self.num_active_keyvectors
@@ -385,11 +391,11 @@ class Retargeter:
 
             # All these vectors are defined in the hand frame which is the center of the hand. 
             # We need to transform them to the wrist frame.
-            start_vectors = [e[0] for e in keyvectors_data_faive.values()]
-            end_vectors = [e[1] for e in keyvectors_data_faive.values()]
+            # start_vectors = [e[0] for e in keyvectors_data_faive.values()]
+            # end_vectors = [e[1] for e in keyvectors_data_faive.values()]
             
-            debug_dict["keyvec_mujoco"]["start"] = start_vectors
-            debug_dict["keyvec_mujoco"]["end"] = end_vectors
+            debug_dict["keyvec_mujoco"]["start"] = start_vectors_untuned
+            debug_dict["keyvec_mujoco"]["end"] = end_vectors_untuned
 
         print(f"Retarget time: {(time.time() - start_time) * 1000} ms")
 
