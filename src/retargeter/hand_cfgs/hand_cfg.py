@@ -12,3 +12,4 @@ class HandCfg:
     FINGER_TO_KNUCKLE: Dict[str, str]
     GC_LIMITS_LOWER: NDArray[np.float32]
     GC_LIMITS_UPPER: NDArray[np.float32]
+    RETARGETER_OPTIONS: Dict[str, Any]

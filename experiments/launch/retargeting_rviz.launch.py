@@ -50,6 +50,20 @@ def generate_launch_description():
                             "p4.urdf",
                         )
                     },
+                    {
+                        "retarget/retargeter_cfg": os.path.join(
+                            get_package_share_directory("experiments"),
+                            "cfgs",
+                            "retargeter_cfgs_p4.yaml",
+                        ),
+                    },
+                    {
+                        "retarget/mano_adjustments": os.path.join(
+                            get_package_share_directory("experiments"),
+                            "cfgs",
+                            "retargeter_adjustment.yaml"
+                        ),
+                    },
                     {"retarget/hand_scheme": "p4"},
                     {"debug": True},
                 ],

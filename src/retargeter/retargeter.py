@@ -59,6 +59,7 @@ class Retargeter:
         self.finger_to_tip: Dict[str, str] = self.hand_config.FINGER_TO_TIP
         self.finger_to_base: Dict[str, str] = self.hand_config.FINGER_TO_BASE
         self.finger_to_knuckle: Dict[str, str] = self.hand_config.FINGER_TO_KNUCKLE
+        self.retargeter_options: Dict[str, Any] = self.hand_config.RETARGETER_OPTIONS
 
         if mano_adjustments is None:
             self.mano_adjustments = {}
@@ -86,7 +87,8 @@ class Retargeter:
         self.loss_coeffs = torch.tensor(self.retargeter_cfg["loss_coeffs"]).to(device)            
         self.joint_regularizers = self.retargeter_cfg["joint_regularizers"]
 
-        self.num_active_keyvectors = 16
+        self.num_active_keyvectors = self.retargeter_options["num_active_keyvectors"]
+        self.loss_coeffs = torch.tensor([5.0] * self.num_active_keyvectors).to(device)
 
         prev_cwd = os.getcwd()
         model_path = (
@@ -225,19 +227,19 @@ class Retargeter:
             assert torch.allclose(
                 chain_transform1[base].transform_points(self.root),
                 chain_transform2[base].transform_points(self.root),
-                atol=1, #e-1,
-                rtol=1 #e-1,
+                # atol=1, #e-1,
+                # rtol=1 #e-1,
             ), f"Base frame {base} not fixed to the palm"
             assert torch.allclose(
                 chain_transform1[base].transform_points(self.root),
                 chain_transform2[base].transform_points(self.root),
-                atol=1, #e-1,
-                rtol=1 #e-1,
+                # atol=1, #e-1,
+                # rtol=1 #e-1,
             ), f"Base frame {base} not fixed to the palm"
 
     def retarget_finger_mano_joints(
         self,
-        joints: np.array,
+        joints: torch.Tensor,
         warm: bool = True,
         opt_steps: int = 2,
         debug_dict=None,
@@ -290,7 +292,7 @@ class Retargeter:
 
         mano_knuckle_points = {}
         for finger, finger_joints in mano_joints_dict.items():
-            if finger == "wrist" or finger == "thumb":
+            if finger == "wrist": # or finger == "thumb":
                 continue
             mano_knuckle_points[finger + "_knuckle"] = finger_joints[[2], :]
 
@@ -339,7 +341,7 @@ class Retargeter:
             }
             other_mujoco_pts.update(mujoco_finger_knuckles)
 
-            keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, other_mujoco_pts, apply_scaling=True)
+            keyvectors_data_faive, keyvectors_faive = retarget_utils.get_keyvectors(mujoco_finger_bases, mujoco_fingertips, other_mujoco_pts, apply_scaling=False)
 
             loss: torch.Tensor = torch.tensor(0.0)
             keyvector_losses = [[]] * self.num_active_keyvectors
@@ -456,10 +458,13 @@ class Retargeter:
         return joints
     
     def retarget(self, joints, debug_dict=None):
+        elbow_marker_active = True
+        if elbow_marker_active:
+            joints = np.delete(joints, 1, axis=0)
         normalized_joint_pos, mano_center_and_rot = (
             retarget_utils.normalize_points_to_hands_local(joints)
         )
-        normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
+        # normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
         normalized_joint_pos = (
             normalized_joint_pos @ self.model_rotation.T + self.model_center
         )

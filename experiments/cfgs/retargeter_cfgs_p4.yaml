@@ -2,10 +2,10 @@ lr: 2.5
 use_scalar_distance_palm: False
 loss_coeffs: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0] #, 5.0, 5.0, 5.0, 5.0] #, 5.0, 5.0, 5.0, 5.0]
 joint_regularizers:  # tuples (joint_name, zero_value, weight) for regularizing joints to zero
-  - [index_base2adb_virt, 0,  0.00001]
-  - [middle_base2adb_virt, 0, 0.00001]
-  - [ring_base2adb_virt, 0, 0.00001]
-  - [pinky_base2adb_virt, 0, 0.00001]
+  - [index_abd_virt, 0,  0.00001]
+  - [middle_abd_virt, 0, 0.00001]
+  - [ring_abd_virt, 0, 0.00001]
+  - [pinky_abd_virt, 0, 0.00001]
 
 ## Scheme for joints regularization and loss_weighting (Mapping)
 # Thumb: thumb_abd_virt

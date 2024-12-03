@@ -79,7 +79,7 @@ def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, 
         "wrist2ring": (other_pts["wrist"], fingertips["ring"], 0.5),
         "wrist2pinky": (other_pts["wrist"], fingertips["pinky"], 0.5),
         # Define keyvectors from finger bases to fingertips
-        # "thumbBase2thumbTip": (finger_bases["thumb"], fingertips["thumb"], 1.0),
+        # "thumbBase2thumbTip": (finger_bases["thumb"], fingertips["thumb"], 0.2),
         # "indexBase2indexTip": (finger_bases["index"], fingertips["index"], 1.0),
         # "middleBase2middleTip": (finger_bases["middle"], fingertips["middle"], 1.0),
         # "ringBase2ringTip": (finger_bases["ring"], fingertips["ring"], 1.0),
@@ -93,12 +93,17 @@ def get_keyvectors(finger_bases: Dict[str, torch.Tensor], fingertips: Dict[str, 
         "thumb2middle": (fingertips["thumb"], fingertips["middle"], 0.5),
         "thumb2ring": (fingertips["thumb"], fingertips["ring"], 0.5),
         "thumb2pinky": (fingertips["thumb"], fingertips["pinky"], 0.5),
-        # Define additional keyvector for pinky to thumb
+        # Define additional keyvector for thumb
         "pinky2thumb": (finger_bases["pinky"], fingertips["thumb"], 0.5),
+        "thumbKnuckle2thumbTip": (other_pts["thumb_knuckle"], fingertips["thumb"], 0.3),
         # Aduction/Abduction keyvectors
         "index2middle_adb": (other_pts["index_knuckle"], other_pts["middle_knuckle"], 0.5),
         "middle2ring_adb": (other_pts["middle_knuckle"], other_pts["ring_knuckle"], 0.5),
         "ring2pinky_adb": (other_pts["ring_knuckle"], other_pts["pinky_knuckle"], 0.5),
+        # Testing/Debugging keyvectors
+        # "indexBase2indexTip": (finger_bases["index"], fingertips["index"], 0.5),
+        # "indexBase2indexKnuckle": (finger_bases["index"], other_pts["index_knuckle"], 0.5),
+        # "indexKnuckle2indexTip": (other_pts["index_knuckle"], fingertips["index"], 0.5),
     }
     
     keyvectors = {}

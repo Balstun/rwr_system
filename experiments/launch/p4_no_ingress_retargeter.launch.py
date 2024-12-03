@@ -27,12 +27,27 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
-                        "retarget/mjcf_filepath": os.path.join(
+                        "retarget/urdf_filepath": os.path.join(
                             get_package_share_directory("viz"),
                             "models",
                             "faive_hand_p4",
-                            "hand_p4.xml",
-                        )
+                            "urdf",
+                            "p4.urdf",
+                        ),
+                    },
+                    {
+                        "retarget/retargeter_cfg": os.path.join(
+                            get_package_share_directory("experiments"),
+                            "cfgs",
+                            "retargeter_cfgs_p4.yaml",
+                        ),
+                    },
+                    {
+                        "retarget/mano_adjustments": os.path.join(
+                            get_package_share_directory("experiments"),
+                            "cfgs",
+                            "retargeter_adjustment.yaml"
+                        ),
                     },
                     {"retarget/hand_scheme": "p4"},
                     {"debug": True},
@@ -41,21 +56,21 @@ def generate_launch_description():
 
             # TODO: Update/Build a Mapper Node to control faive_hand in MuJoCo (for visualization and debugging)
 
-#             Node(
-#                 package='robot_state_publisher',
-#                 executable='robot_state_publisher',
-#                 name='robot_state_publisher',
-#                 output='screen',
-#                 parameters=[{'robot_description': robot_desc,}],
-#                 arguments=[urdf]),
+            Node(
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                name='robot_state_publisher',
+                output='screen',
+                parameters=[{'robot_description': robot_desc,}],
+                arguments=[urdf]),
 
-            # Node(
-            #     package='rviz2',
-            #     executable='rviz2',
-            #     name='rviz2',
-            #     output='screen',
-            #     arguments=['-d', os.path.join(get_package_share_directory('viz'), 'rviz', 'retarget_config.rviz')],
-            #     ),
+            Node(
+                package='rviz2',
+                executable='rviz2',
+                name='rviz2',
+                output='screen',
+                arguments=['-d', os.path.join(get_package_share_directory('viz'), 'rviz', 'retarget_config.rviz')],
+                ),
 
         ]
     )
