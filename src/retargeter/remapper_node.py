@@ -55,7 +55,7 @@ class RemapperNode(Node):
 
         for i in range(self.num_joints):
             if i == self.num_joints - 1:
-                remapped_joints.data[i] = self.wrist_cmd
+                remapped_joints.data[i] = 0.0 #self.wrist_cmd
             else:
                 remapped_joints.data[i] = joints[self.joint_remapping[i]]
 
