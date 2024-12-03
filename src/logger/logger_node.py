@@ -3,22 +3,31 @@
 import rclpy
 from rclpy.node import Node
 import rosbag2_py
-import yaml
-from pathlib import Path
-from datetime import datetime
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, String, Float32
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import Image
 from bag2h5_converter import convert_to_h5
 from rclpy.serialization import serialize_message
+from pathlib import Path
+from datetime import datetime
 
 # Define supported topics and message types
-topics_types = {
+TOPICS_TYPES = {
     "/franka/end_effector_pose": PoseStamped,
+    "/franka/end_effector_pose_cmd": PoseStamped,
     "/hand/policy_output": Float32MultiArray,
     "/oakd_front_view/color": Image,
     "/oakd_side_view/color": Image,
-    "/oakd_wrist_view/color": Image,
+    #"/oakd_wrist_view/color": Image,
+    "/task_description": String,  # New topic for task description
+    "/pink_sensor_filtered" : Float32,# pinky sensor filtered
+    "/ring_sensor_filtered" : Float32, # ring sensor filtered
+    "/middle_sensor_filtered" : Float32, # middle sensor filtered
+    "/index_sensor_filtered" : Float32, # index sensor filtered
+    "/thumb_sensor_filtered" : Float32, # thumb sensor filtered,
+    "/target_cube_mask" : Image, # mask of target cube in oakd side view camera
+    "/target_tray_mask" : Image, # mask of traget tray in oakd side view camera
+    "/segmentation_debug_img" : Image # oakd side view camera frame with annotated segmentation contours and class labels   
 }
 
 class DemoLogger(Node):
@@ -28,13 +37,14 @@ class DemoLogger(Node):
         
         self.base_path = Path(base_path)
         self.task_name = None
+        self.task_description = None
         self.writer = None
         self.topics_to_record = topics_to_record
+        self.task_description_topic = "/task_description"
         
-        if not self.topics_to_record:
-            self.get_logger().error("No topics specified to record. Check the configuration file.")
-            return
-
+        if self.task_description_topic not in self.topics_to_record:
+            self.topics_to_record.append(self.task_description_topic)
+        
         # Ensure the base directory exists
         if not self.base_path.exists():
             self.base_path.mkdir(parents=True, exist_ok=True)
@@ -44,7 +54,9 @@ class DemoLogger(Node):
 
     def run_logger(self):
         # Get task name (subfolder within the base path)
-        self.task_name = input("Enter the task name (this will be the output folder): ")
+        if self.task_name is None:
+            self.task_name = input("Enter the task name (this will be the output folder): ")
+        
         task_folder = self.base_path / self.task_name
         
         # Create the task directory if it doesn't exist
@@ -54,30 +66,43 @@ class DemoLogger(Node):
         else:
             self.get_logger().info(f"Directory '{task_folder}' already exists.")
         
+        self.task_description = input("Enter a description for the task: ")
+        
         # Confirm and start recording
-        if input("Start recording? (y/n): ").strip().lower() == 'y':
-            # folder inside the task folder
-            task_folder_bag = task_folder / "rosbag2"
-            self.start_recording(task_folder_bag)
+        input("Press Enter to start recording ")
+        # folder inside the task folder
+        task_folder_bag = task_folder / "rosbag2"
+        self.start_recording(task_folder_bag)
 
-            # Wait for user to stop recording
-            input("Press Enter to stop recording...")
-            self.stop_recording()
+        # Publish task description as a String message
+        self.publish_task_description(self.task_description)
 
-            # Ask to save or discard
-            if input("Save recording? (y/n): ").strip().lower() == 'y':
-                # Generate a unique name based on the current date and time
-                h5_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".h5"
-                h5_filepath = task_folder / h5_filename
-                self.get_logger().info(f"Recording saved as '{h5_filename}' in folder '{task_folder}'")
-                
-                # Convert to HDF5 and delete the bag file afterward
-                convert_to_h5(input_bag_path=str(task_folder_bag), output_h5_path=str(h5_filepath))
-                self.get_logger().info(f"Recording converted to HDF5: {h5_filepath}")
-                self.delete_recording(task_folder_bag)
-            else:
-                self.get_logger().info("Recording discarded.")
-                self.delete_recording(task_folder_bag)
+        # Wait for user to stop recording
+        input("Press Enter to stop recording...")
+        self.stop_recording()
+
+        # Ask to save or discard
+        if input("Save recording? (y/n): ").strip().lower() == 'y':
+            # Generate a unique name based on the current date and time
+            h5_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".h5"
+            h5_filepath = task_folder / h5_filename
+            self.get_logger().info(f"Recording saved as '{h5_filename}' in folder '{task_folder}'")
+            
+            # Convert to HDF5 and delete the bag file afterward
+            convert_to_h5(input_bag_path=str(task_folder_bag), output_h5_path=str(h5_filepath))
+            self.get_logger().info(f"Recording converted to HDF5: {h5_filepath}")
+            self.delete_recording(task_folder_bag)
+        else:
+            self.get_logger().info("Recording discarded.")
+            self.delete_recording(task_folder_bag)
+
+    def publish_task_description(self, description):
+        # Create a publisher for the task description topic
+        description_pub = self.create_publisher(String, self.task_description_topic, 10)
+        msg = String()
+        msg.data = description
+        description_pub.publish(msg)
+        self.get_logger().info(f"Task description published: {description}")
 
     def start_recording(self, task_folder_bag):
         if not self.topics_to_record:
@@ -96,7 +121,7 @@ class DemoLogger(Node):
         # Add topics to be recorded
         self.subscribers = []
         for topic_name in self.topics_to_record:
-            topic_type = topics_types.get(topic_name)
+            topic_type = TOPICS_TYPES.get(topic_name)
             if not topic_type:
                 self.get_logger().error(f"Topic type for {topic_name} is not recognized.")
                 continue
@@ -145,7 +170,21 @@ def main(args=None):
     base_path = "recordings"  # Modify this path as needed
 
     # Load topics to record (for demonstration, using hardcoded list)
-    topics_to_record = ['/oakd_front_view/color', '/hand/policy_output']
+    topics_to_record = ['/oakd_front_view/color', 
+                        '/oakd_side_view/color', 
+                        #'/oakd_wrist_view/color', 
+                        '/hand/policy_output', 
+                        '/franka/end_effector_pose', 
+                        '/franka/end_effector_pose_cmd'
+                        '/task_description', 
+                        '/pink_sensor_filtered',
+                        '/ring_sensor_filtered',
+                        '/middle_sensor_filtered',
+                        '/index_sensor_filtered',
+                        '/thumb_sensor_filtered',
+                        '/target_cube_mask',
+                        '/target_tray_mask', 
+                        '/segmentation_debug_img']
 
     # Initialize ROS and create DemoLogger instance
     rclpy.init(args=args)
@@ -158,6 +197,7 @@ def main(args=None):
         demo_logger.run_logger()
     demo_logger.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

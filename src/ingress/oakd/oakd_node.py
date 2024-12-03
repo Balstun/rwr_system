@@ -17,7 +17,7 @@ class OakDPublisher(Node):
     def __init__(self, camera_dict=None):
         super().__init__("oakd_publisher")
         self.declare_parameter("visualize", False)
-        self.declare_parameter("enable_front_camera", False)
+        self.declare_parameter("enable_front_camera", True)
         self.declare_parameter("enable_side_camera", True)
         self.declare_parameter("enable_wrist_camera", False)
 

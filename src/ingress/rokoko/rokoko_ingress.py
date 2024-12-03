@@ -9,6 +9,7 @@ from scipy.spatial.transform import Rotation
 
 MANO_KEYPOINTS_LIST = [
     "rightHand",
+    "rightLowerArm",
     "rightThumbProximal",
     "rightThumbMedial",
     "rightThumbDistal",
@@ -44,9 +45,14 @@ class RokokoTracker:
 
         self.keypoint_positions = None
         self.wrist_position = None
+        self.wrist_quat = None
         self.time_stamp = None
         self.keypoints_lock = threading.Lock()
         self.wrist_lock = threading.Lock()
+
+        # Right lower arm
+        self.right_lower_arm_lock = threading.Lock()
+        self.right_lower_arm_position = None
 
         self.keep_running = True
         self.thread = threading.Thread(target=self.read_rokoko_data)
@@ -78,12 +84,24 @@ class RokokoTracker:
             self.wrist_position = wrist_position.copy()
             self.wrist_quat = wrist_quat.copy()
 
+    def set_right_lower_arm_pose(self, right_lower_arm_position, right_lower_arm_quat):
+        with self.right_lower_arm_lock:
+            self.right_lower_arm_position = right_lower_arm_position.copy()
+            self.right_lower_arm_quat = right_lower_arm_quat.copy()
+
     def get_wrist_pose(self):
         with self.wrist_lock:
             if self.wrist_position is None or self.wrist_quat is None:
                 KeyError("No wrist pose available")
                 return None
             return self.wrist_position.copy(), self.wrist_quat.copy()
+        
+    def get_right_lower_arm_pose(self):
+        with self.right_lower_arm_lock:
+            if self.right_lower_arm_position is None or self.right_lower_arm_quat is None:
+                KeyError("No RightLowerArm pose available")
+                return None
+            return self.right_lower_arm_position.copy(), self.right_lower_arm_quat.copy()
 
     def read_rokoko_data(self):
         while self.keep_running:
@@ -122,6 +140,7 @@ class RokokoTracker:
             self.set_keypoint_positions(np.array(keypoint_positions), timestamp)
 
             if self.use_coil:
+
                 wrist_position = np.array(
                     [
                         body_data["rightHand"]["position"]["x"],
@@ -154,6 +173,17 @@ class RokokoTracker:
                 wrist_rot = R_z_180 * wrist_rot
                 wrist_quat = wrist_rot.as_quat()
                 self.set_wrist_pose(wrist_position, wrist_quat)
+
+                # Read right_lower_arm position from json data 
+                right_lower_arm_position = np.array(
+                    [
+                        body_data["rightLowerArm"]["position"]["x"],
+                        body_data["rightLowerArm"]["position"]["y"],
+                        body_data["rightLowerArm"]["position"]["z"],
+                    ]
+                )
+                right_lower_arm_quat = Rotation.from_matrix(np.eye(3)).as_quat()
+                self.set_right_lower_arm_pose(right_lower_arm_position, right_lower_arm_quat) 
 
 
 if __name__ == "__main__":

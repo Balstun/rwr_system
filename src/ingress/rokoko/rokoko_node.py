@@ -33,6 +33,12 @@ class RokokoNode(Node):
         self.ingress_wrist_pub = self.create_publisher(
             PoseStamped, "/ingress/wrist", 10
         )
+
+        self.ingress_right_lower_arm_pub = self.create_publisher(
+            PoseStamped, "/ingress/right_lower_arm", 10
+        )
+
+
         self.debug = debug
 
     def timer_publish_cb(self):
@@ -52,22 +58,44 @@ class RokokoNode(Node):
         if self.use_coil:
             wrist_pos, wrist_rot = self.tracker.get_wrist_pose()
             # Create a PoseStamped message
-            wrist_msg = PoseStamped()
-            wrist_msg.header.frame_id = "coil"
-            wrist_msg.header.stamp = self.get_clock().now().to_msg()
+            right_lower_arm_msg = PoseStamped()
+            right_lower_arm_msg.header.frame_id = "coil"
+            right_lower_arm_msg.header.stamp = self.get_clock().now().to_msg()
 
             # Assign position using Point
-            wrist_msg.pose.position = Point(
+            right_lower_arm_msg.pose.position = Point(
                 x=wrist_pos[0], y=wrist_pos[1], z=wrist_pos[2]
             )
 
             # Assign orientation using Quaternion
-            wrist_msg.pose.orientation = Quaternion(
+            right_lower_arm_msg.pose.orientation = Quaternion(
                 x=wrist_rot[0], y=wrist_rot[1], z=wrist_rot[2], w=wrist_rot[3]
             )
 
             # Publish the message
-            self.ingress_wrist_pub.publish(wrist_msg)
+            self.ingress_wrist_pub.publish(right_lower_arm_msg)
+
+            # Do the same for right_lower_arm ------------------------------------------------
+
+            right_lower_arm_pos, right_lower_arm_quat = self.tracker.get_right_lower_arm_pose()
+            
+            # Create a PoseStamped message
+            right_lower_arm_msg = PoseStamped()
+            right_lower_arm_msg.header.frame_id = "coil"
+            right_lower_arm_msg.header.stamp = self.get_clock().now().to_msg()
+
+            # Assign position using Point
+            right_lower_arm_msg.pose.position = Point(
+                x=right_lower_arm_pos[0], y=right_lower_arm_pos[1], z=right_lower_arm_pos[2]
+            )
+
+            # Assign orientation using Quaternion
+            right_lower_arm_msg.pose.orientation = Quaternion(
+                x=right_lower_arm_quat[0], y=right_lower_arm_quat[1], z=right_lower_arm_quat[2], w=right_lower_arm_quat[3]
+            )
+
+            # Publish the message
+            self.ingress_right_lower_arm_pub.publish(right_lower_arm_msg)
 
 
 def main(args=None):
