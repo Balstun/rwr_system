@@ -54,6 +54,14 @@ def generate_launch_description():
                 ],
             ),
 
+            # WRIST CONTROLLER NODE
+            Node(
+                package="wrist_retargeter",
+                executable="wrist_retargeter",
+                name="wrist_retargeter",
+                output="screen",
+            ),
+
             # REMAPPER NODE
             Node(
                 package="retargeter",

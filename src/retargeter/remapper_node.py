@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, Float32
 import numpy as np
 
 class RemapperNode(Node):
@@ -16,6 +16,12 @@ class RemapperNode(Node):
             Float32MultiArray,
             '/hand/policy_output',
             self.remap_callback,
+            10
+        )
+        self._wrist_cmd_sub = self.create_subscription(
+            Float32,
+            '/hand/wrist_cmd',
+            self.wrist_cmd_callback,
             10
         )
         self.joint_remapping = {
@@ -36,6 +42,7 @@ class RemapperNode(Node):
             14: 2, # thumb_mcp_angle (pip?)
         }
         self.num_joints = 16
+        self.wrist_cmd = 0.0
 
     def remap_callback(self, msg):
         target_joint_angles = msg.data
@@ -48,11 +55,14 @@ class RemapperNode(Node):
 
         for i in range(self.num_joints):
             if i == self.num_joints - 1:
-                remapped_joints.data[i] = 0.0
+                remapped_joints.data[i] = self.wrist_cmd
             else:
                 remapped_joints.data[i] = joints[self.joint_remapping[i]]
 
         return remapped_joints
+    
+    def wrist_cmd_callback(self, msg):
+        self.wrist_cmd = msg.data
 
 def main(args=None):
     rclpy.init(args=args)
