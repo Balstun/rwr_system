@@ -54,6 +54,11 @@ class RokokoTracker:
         self.right_lower_arm_lock = threading.Lock()
         self.right_lower_arm_position = None
 
+        # Elbow
+        self.elbow_lock = threading.Lock()
+        self.elbow_position = None
+        self.elbow_quat = None
+
         self.keep_running = True
         self.thread = threading.Thread(target=self.read_rokoko_data)
 
@@ -89,6 +94,11 @@ class RokokoTracker:
             self.right_lower_arm_position = right_lower_arm_position.copy()
             self.right_lower_arm_quat = right_lower_arm_quat.copy()
 
+    def set_elbow_pose(self, elbow_position, elbow_quat):
+        with self.elbow_lock:
+            self.elbow_position = elbow_position.copy()
+            self.elbow_quat = elbow_quat.copy()
+
     def get_wrist_pose(self):
         with self.wrist_lock:
             if self.wrist_position is None or self.wrist_quat is None:
@@ -102,6 +112,13 @@ class RokokoTracker:
                 KeyError("No RightLowerArm pose available")
                 return None
             return self.right_lower_arm_position.copy(), self.right_lower_arm_quat.copy()
+
+    def get_elbow_pose(self):
+        with self.elbow_lock:
+            if self.elbow_position is None or self.elbow_quat is None:
+                KeyError("No elbow pose available")
+                return None
+            return self.elbow_position.copy(), self.elbow_quat.copy()
 
     def read_rokoko_data(self):
         while self.keep_running:
@@ -183,8 +200,30 @@ class RokokoTracker:
                     ]
                 )
                 right_lower_arm_quat = Rotation.from_matrix(np.eye(3)).as_quat()
-                self.set_right_lower_arm_pose(right_lower_arm_position, right_lower_arm_quat) 
+                self.set_right_lower_arm_pose(right_lower_arm_position, right_lower_arm_quat)
 
+                # Define elbow pose
+                elbow_position = np.array(
+                    [
+                        body_data["rightLowerArm"]["position"]["x"],
+                        body_data["rightLowerArm"]["position"]["y"],
+                        body_data["rightLowerArm"]["position"]["z"],
+                    ]
+                )
+                elbow_position[2] = -elbow_position[2]
+                elbow_rot = Rotation.from_quat(
+                    np.array(
+                        [
+                            body_data["rightLowerArm"]["rotation"]["x"],
+                            body_data["rightLowerArm"]["rotation"]["y"],
+                            body_data["rightLowerArm"]["rotation"]["z"],
+                            body_data["rightLowerArm"]["rotation"]["w"],
+                        ]
+                    )
+                )
+                elbow_rot = R_z_180 * elbow_rot
+                elbow_quat = elbow_rot.as_quat()
+                self.set_elbow_pose(elbow_position, elbow_quat)
 
 if __name__ == "__main__":
 
