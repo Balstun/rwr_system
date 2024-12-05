@@ -56,6 +56,11 @@ class RokokoTracker:
         self.right_lower_arm_lock = threading.Lock()
         self.right_lower_arm_position = None
 
+        # Elbow
+        self.elbow_lock = threading.Lock()
+        self.elbow_position = None
+        self.elbow_quat = None
+
         self.keep_running = True
         self.thread = threading.Thread(target=self.read_rokoko_data)
 
@@ -186,7 +191,31 @@ class RokokoTracker:
                     ]
                 )
                 right_lower_arm_quat = Rotation.from_matrix(np.eye(3)).as_quat()
-                self.set_right_lower_arm_pose(right_lower_arm_position, right_lower_arm_quat) 
+                self.set_right_lower_arm_pose(right_lower_arm_position, right_lower_arm_quat)
+
+                ## Elbow
+                elbow_position = np.array(
+                    [
+                        body_data["rightLowerArm"]["position"]["x"],
+                        body_data["rightLowerArm"]["position"]["y"],
+                        body_data["rightLowerArm"]["position"]["z"],
+                    ]
+                )
+                elbow_position[2] = -elbow_position[2]
+                
+                elbow_rot = Rotation.from_quat(
+                    np.array(
+                        [
+                            body_data["rightLowerArm"]["rotation"]["x"],
+                            body_data["rightLowerArm"]["rotation"]["y"],
+                            body_data["rightLowerArm"]["rotation"]["z"],
+                            body_data["rightLowerArm"]["rotation"]["w"],
+                        ]
+                    )
+                )
+                elbow_rot = R_z_180 * elbow_rot
+                elbow_quat = elbow_rot.as_quat()
+                self.set_elbow_pose(elbow_position, elbow_quat)
 
 
 if __name__ == "__main__":
