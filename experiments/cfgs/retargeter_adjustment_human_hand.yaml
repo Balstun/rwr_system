@@ -4,17 +4,17 @@ thumb:
   scale : [1.0, 1.0, 1.0]
 index: 
   translation : [0.0, 0.0, 0.0]
-  rotation : [-0.2, 0.0, -0.50]
+  rotation : [-0.2, 0.0, -0.30]
   scale : [1.0, 1.0, 1.0]
 middle: 
   translation : [0.0, 0.005, 0.0]
-  rotation : [-0.2, 0.0, -0.45]
+  rotation : [-0.2, 0.0, -0.30]
   scale : [1.0, 1.0, 1.0]
 ring: 
   translation : [0.0, 0.005, 0.0]
-  rotation : [-0.3, 0.0, -0.55]
+  rotation : [-0.3, 0.0, -0.40]
   scale : [1.0, 1.0, 1.0]
 pinky: 
   translation : [-0.005, -0.005, 0.0]
-  rotation : [-0.2, 0.0, -0.60]
+  rotation : [-0.2, 0.0, -0.50]
   scale : [1.0, 1.0, 1.0]
