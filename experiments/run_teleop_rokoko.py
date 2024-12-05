@@ -125,7 +125,7 @@ class RokokoCoilDemo(Node):
             self.X_W_fEE_init = deepcopy(self.X_W_fEE)
 
         start_target = np.array(
-            [[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0.5, -0.1, 0.25, 1]]
+            [[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0.4388, -0.0679, 0.2452, 1]]
         ).T
         start_target = DrakeRigidTransform(start_target)
         self.publish_target_pose(start_target)

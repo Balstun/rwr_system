@@ -50,6 +50,8 @@ class RokokoTracker:
         self.keypoints_lock = threading.Lock()
         self.wrist_lock = threading.Lock()
 
+        self.debug_flag = "HERE"
+
         # Right lower arm
         self.right_lower_arm_lock = threading.Lock()
         self.right_lower_arm_position = None
@@ -167,10 +169,11 @@ class RokokoTracker:
                 # from quaternion to rotation matrix
                 # wrist_rot = R.from_quat(wrist_quat).as_matrix()
                 #  rotation matrix 180 degrees around z axis
+                self.debug_flag = "NOT APPLYING ROT"
                 R_z_180 = Rotation.from_matrix(
                     np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
                 )
-                wrist_rot = R_z_180 * wrist_rot
+                wrist_rot = R_z_180 * wrist_rot # observed to not align with coil frame then
                 wrist_quat = wrist_rot.as_quat()
                 self.set_wrist_pose(wrist_position, wrist_quat)
 

@@ -20,7 +20,7 @@ class RemapperNode(Node):
         )
         self._wrist_cmd_sub = self.create_subscription(
             Float32,
-            '/hand/wrist_cmd',
+            '/hand/wrist_pitch_cmd',
             self.wrist_cmd_callback,
             10
         )
@@ -55,7 +55,7 @@ class RemapperNode(Node):
 
         for i in range(self.num_joints):
             if i == self.num_joints - 1:
-                remapped_joints.data[i] = 0.0 #self.wrist_cmd
+                remapped_joints.data[i] = self.wrist_cmd
             else:
                 remapped_joints.data[i] = joints[self.joint_remapping[i]]
 

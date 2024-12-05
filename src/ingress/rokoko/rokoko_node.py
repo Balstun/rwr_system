@@ -22,6 +22,8 @@ class RokokoNode(Node):
         self.use_coil = self.get_parameter("rokoko_tracker/use_coil").value
 
         self.tracker = RokokoTracker(ip=ip, port=port, use_coil=self.use_coil)
+        self._logger.info("RokokoTracker launched")
+
         self.tracker.start()
 
         ingress_period = 0.005  # Timer period in seconds
@@ -42,6 +44,8 @@ class RokokoNode(Node):
         self.debug = debug
 
     def timer_publish_cb(self):
+
+        self._logger.info("Current debug flag: {}".format(self.tracker.debug_flag))
 
         key_points = self.tracker.get_keypoint_positions()
         wait_cnt = 1
