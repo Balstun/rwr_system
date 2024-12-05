@@ -433,7 +433,6 @@ class Retargeter:
             x_local = finger_joints - x_base  # Local coordinates (n_joints, 3)
             x_local_scaled = x_local * scale  # Apply scaling
 
-            # Rotation around base joint in palm frame
             rot = Rotation.from_euler("xyz", rotation_angles, degrees=False)
             R_matrix = rot.as_matrix()  # Rotation matrix (3,3)
             x_local_rotated = x_local_scaled @ R_matrix.T  # Apply rotation
@@ -470,10 +469,11 @@ class Retargeter:
         normalized_joint_pos, mano_center_and_rot = (
             retarget_utils.normalize_points_to_hands_local(joints)
         )
-        # normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
+        normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
         normalized_joint_pos = (
             normalized_joint_pos @ self.model_rotation.T + self.model_center
         )
+        # TODO: Rotate skewed mano keypoints to align with the hand frame
         if debug_dict is not None:
             debug_dict["mano_center_and_rot"] = mano_center_and_rot
             debug_dict["model_center_and_rot"] = (self.model_center, self.model_rotation)
