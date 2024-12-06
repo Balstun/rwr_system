@@ -45,7 +45,7 @@ class RokokoNode(Node):
 
     def timer_publish_cb(self):
 
-        self._logger.info("Current debug flag: {}".format(self.tracker.debug_flag))
+        #self._logger.info("Current debug flag: {}".format(self.tracker.debug_flag))
 
         key_points = self.tracker.get_keypoint_positions()
         wait_cnt = 1

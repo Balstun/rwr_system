@@ -169,11 +169,10 @@ class RokokoTracker:
                 # from quaternion to rotation matrix
                 # wrist_rot = R.from_quat(wrist_quat).as_matrix()
                 #  rotation matrix 180 degrees around z axis
-                self.debug_flag = "NOT APPLYING ROT"
                 R_z_180 = Rotation.from_matrix(
                     np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
                 )
-                wrist_rot = R_z_180 * wrist_rot # observed to not align with coil frame then
+                wrist_rot = R_z_180 * wrist_rot 
                 wrist_quat = wrist_rot.as_quat()
                 self.set_wrist_pose(wrist_position, wrist_quat)
 
@@ -185,8 +184,21 @@ class RokokoTracker:
                         body_data["rightLowerArm"]["position"]["z"],
                     ]
                 )
-                right_lower_arm_quat = Rotation.from_matrix(np.eye(3)).as_quat()
-                self.set_right_lower_arm_pose(right_lower_arm_position, right_lower_arm_quat) 
+
+                right_lower_arm_position[2] = -right_lower_arm_position[2]
+                right_lower_arm_rot = Rotation.from_quat(
+                    np.array(
+                        [
+                            body_data["rightLowerArm"]["rotation"]["x"],
+                            body_data["rightLowerArm"]["rotation"]["y"],
+                            body_data["rightLowerArm"]["rotation"]["z"],
+                            body_data["rightLowerArm"]["rotation"]["w"],
+                        ]
+                    )
+                )
+                right_lower_arm_rot = R_z_180 * right_lower_arm_rot 
+
+                self.set_right_lower_arm_pose(right_lower_arm_position, right_lower_arm_rot.as_quat()) 
 
 
 if __name__ == "__main__":
