@@ -470,7 +470,7 @@ class Retargeter:
         normalized_joint_pos, mano_center_and_rot = (
             retarget_utils.normalize_points_to_hands_local(joints)
         )
-        # normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
+        normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
         normalized_joint_pos = (
             normalized_joint_pos @ self.model_rotation.T + self.model_center
         )
