@@ -48,7 +48,7 @@ class RokokoNode(Node):
 
     def timer_publish_cb(self):
 
-        self._logger.info("Current debug flag: {}".format(self.tracker.debug_flag))
+        #self._logger.info("Current debug flag: {}".format(self.tracker.debug_flag))
 
         key_points = self.tracker.get_keypoint_positions()
         wait_cnt = 1
@@ -103,30 +103,6 @@ class RokokoNode(Node):
 
             # Publish the message
             self.ingress_right_lower_arm_pub.publish(right_lower_arm_msg)
-
-            ## Repeat for elbow ------------------------------------------------
-
-            elbow_pos, elbow_quat = self.tracker.get_elbow_pose()
-
-            # Create a PoseStamped message
-            elbow_msg = PoseStamped()
-            elbow_msg.header.frame_id = "coil"
-            elbow_msg.header.stamp = self.get_clock().now().to_msg()
-
-            # Assign position using Point
-            elbow_msg.pose.position = Point(
-                x=elbow_pos[0], y=elbow_pos[1], z=elbow_pos[2]
-            )
-
-            # Assign orientation using Quaternion
-            elbow_msg.pose.orientation = Quaternion(
-                x=elbow_quat[0], y=elbow_quat[1], z=elbow_quat[2], w=elbow_quat[3]
-            )
-
-            # TODO: Apply rotation (and translation if needed) to the elbow pose [computed from the wrist pose]
-
-            # Publish the message
-            self.ingress_elbow_pub.publish(elbow_msg)
 
 
 def main(args=None):
