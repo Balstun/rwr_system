@@ -56,6 +56,11 @@ class RokokoTracker:
         self.right_lower_arm_lock = threading.Lock()
         self.right_lower_arm_position = None
 
+        # Elbow
+        self.elbow_lock = threading.Lock()
+        self.elbow_position = None
+        self.elbow_quat = None
+
         self.keep_running = True
         self.thread = threading.Thread(target=self.read_rokoko_data)
 

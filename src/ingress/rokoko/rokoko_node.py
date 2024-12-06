@@ -39,6 +39,9 @@ class RokokoNode(Node):
         self.ingress_right_lower_arm_pub = self.create_publisher(
             PoseStamped, "/ingress/right_lower_arm", 10
         )
+        self.ingress_elbow_pub = self.create_publisher(
+            PoseStamped, "/ingress/elbow", 10
+        )
 
 
         self.debug = debug
