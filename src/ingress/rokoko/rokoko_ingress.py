@@ -5,6 +5,7 @@ import json
 import numpy as np
 import threading
 from scipy.spatial.transform import Rotation
+from ingress.rokoko.rokoko_node import check_subsystem_enabled
 
 
 MANO_KEYPOINTS_LIST = [
@@ -110,6 +111,7 @@ class RokokoTracker:
                 return None
             return self.right_lower_arm_position.copy(), self.right_lower_arm_quat.copy()
 
+    @check_subsystem_enabled
     def read_rokoko_data(self):
         while self.keep_running:
             received_data, addr = self.sock.recvfrom(

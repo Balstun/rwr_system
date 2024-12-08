@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
+from typing import Callable
 import rclpy
-from rclpy.node import Node
+from rclpy.node import MutuallyExclusiveCallbackGroup, Node
 import numpy as np
 from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from rokoko_ingress import RokokoTracker
 from faive_system.src.common.utils import numpy_to_float32_multiarray    
-
+from functools import wraps
 
 class RokokoNode(Node):
     def __init__(self, debug=False):
         super().__init__("rokoko_node")
+        self.enabled = False
 
         # start tracker
         self.declare_parameter("rokoko_tracker/ip", "0.0.0.0")
@@ -103,6 +105,20 @@ class RokokoNode(Node):
 
             # Publish the message
             self.ingress_right_lower_arm_pub.publish(right_lower_arm_msg)
+
+
+def check_subsystem_enabled(func: Callable):
+    """
+    Decorator to check if node is enabled
+    """
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self.node.enabled:
+            return func(self, *args, **kwargs)
+        else:
+            self.node.get_logger().warn(f"{func.__name__} not performed because node is not enabled.")
+            return None
+    return wrapper
 
 
 def main(args=None):

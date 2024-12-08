@@ -13,6 +13,7 @@ from .hand_cfgs.p1_cfg import P1HandCfg
 from .hand_cfgs.p4_cfg import P4HandCfg
 from typing import Union
 from scipy.spatial.transform import Rotation
+from retargeter.retargeter_node import check_subsystem_enabled
 
 class Retargeter:
     """
@@ -463,6 +464,7 @@ class Retargeter:
 
         return joints
     
+    @check_subsystem_enabled
     def retarget(self, joints, debug_dict=None):
         rokoko_glove_active = False if joints.shape[0] == 21 else True
         # Remove the rightLowerArm joint if rokoko glove is active

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
+from typing import Callable
 from numpy.typing import NDArray
 import rclpy
-from rclpy.node import Node
+from rclpy.node import MutuallyExclusiveCallbackGroup, Node
 import numpy as np
 from std_msgs.msg import Float32, String
 from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout
@@ -12,10 +13,13 @@ from faive_system.src.common.utils import numpy_to_float32_multiarray
 import os
 from faive_system.src.viz.visualize_mano import ManoHandVisualizer
 from std_msgs.msg import ColorRGBA
+from functools import wraps
+from retargeter.subsystem_poller import SubsystemPoller
 
 class RetargeterNode(Node):
     def __init__(self, debug=False):
         super().__init__("rokoko_node")
+        self.enabled = False
 
         # start retargeter
         self.declare_parameter("retarget/mjcf_filepath", rclpy.Parameter.Type.STRING)
@@ -66,6 +70,7 @@ class RetargeterNode(Node):
         self.keyvec_loss_pub = self.create_publisher(
             Float32MultiArray, "/retarget/keyvec_loss", 10
         )
+        self.subsystem_poller = SubsystemPoller(self)
 
         self.debug = debug
         if self.debug:
@@ -176,6 +181,20 @@ class RetargeterNode(Node):
             marker.colors.append(default_color)
 
         self.mano_vec_pub.publish(marker)
+
+
+def check_subsystem_enabled(func: Callable):
+    """
+    Decorator to check if node is enabled
+    """
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self.node.enabled:
+            return func(self, *args, **kwargs)
+        else:
+            self.node.get_logger().warn(f"{func.__name__} not performed because node is not enabled.")
+            return None
+    return wrapper
 
 
 def main(args=None):
