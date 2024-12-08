@@ -8,13 +8,12 @@ from std_msgs.msg import Float32, String
 from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from visualization_msgs.msg import Marker, MarkerArray
-from faive_system.src.retargeter import Retargeter
+from faive_system.src.retargeter import Retargeter, SubsystemPoller
 from faive_system.src.common.utils import numpy_to_float32_multiarray
 import os
+import time
 from faive_system.src.viz.visualize_mano import ManoHandVisualizer
 from std_msgs.msg import ColorRGBA
-from functools import wraps
-from retargeter.subsystem_poller import SubsystemPoller
 
 class RetargeterNode(Node):
     def __init__(self, debug=False):
@@ -183,18 +182,6 @@ class RetargeterNode(Node):
         self.mano_vec_pub.publish(marker)
 
 
-def check_subsystem_enabled(func: Callable):
-    """
-    Decorator to check if node is enabled
-    """
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if self.node.enabled:
-            return func(self, *args, **kwargs)
-        else:
-            self.node.get_logger().warn(f"{func.__name__} not performed because node is not enabled.")
-            return None
-    return wrapper
 
 
 def main(args=None):
