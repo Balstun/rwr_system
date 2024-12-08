@@ -40,6 +40,7 @@ class Retargeter:
 
     def __init__(
         self,
+        node,
         hand_scheme: str,
         urdf_filepath: str | None = None,
         mjcf_filepath: str | None = None,
@@ -48,6 +49,7 @@ class Retargeter:
         mano_adjustments: Union[str, dict] = None,
         retargeter_cfg: Union[str, dict] = None,
     ) -> None:
+        self.node = node
         assert (
             int(urdf_filepath is not None)
             + int(mjcf_filepath is not None)

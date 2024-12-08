@@ -54,7 +54,7 @@ class RetargeterNode(Node):
         )
 
         self.retargeter = Retargeter(
-            device="cpu",  mjcf_filepath= mjcf_filepath, urdf_filepath=urdf_filepath, hand_scheme=hand_scheme, retargeter_cfg=retargeter_cfg, mano_adjustments=mano_adjustments
+            self, device="cpu",  mjcf_filepath= mjcf_filepath, urdf_filepath=urdf_filepath, hand_scheme=hand_scheme, retargeter_cfg=retargeter_cfg, mano_adjustments=mano_adjustments
         )
 
         self.joints_pub = self.create_publisher(
@@ -180,9 +180,6 @@ class RetargeterNode(Node):
             marker.colors.append(default_color)
 
         self.mano_vec_pub.publish(marker)
-
-
-
 
 def main(args=None):
     rclpy.init(args=args)
