@@ -7,7 +7,7 @@ import cv2
 import time
 import open3d as o3d
 import threading
-from oakd_utils import PointCloudVisualizer
+from oakd_utils import PointCloudVisualizer, calibrate_with_aruco, compute_projection_matrix
 import numpy as np
 import yaml
 import os
@@ -78,7 +78,7 @@ xout_rect_right.setStreamName("rectified_right")
 if COLOR:
     camRgb = pipeline.create(dai.node.ColorCamera)
     camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-    camRgb.setIspScale(1, 3)
+    camRgb.setIspScale(1, 2)
     camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.RGB)
     camRgb.initialControl.setManualFocus(130)
     stereo.setDepthAlign(dai.CameraBoardSocket.RGB)
@@ -159,6 +159,16 @@ class OakDDriver:
         self.intrinsics = None
         self.inv_intrinsics = None
         self.distortion_coeff = None
+        self.calibrated = False
+    
+    def calibrate(self, frame):
+        T_camera_marker = calibrate_with_aruco(frame, self.intrinsics, self.distortion_coeff)
+        if T_camera_marker is None:
+            print("Calibration failed")
+            return
+        self.extrinsics = T_camera_marker
+        self.projection_matrix = compute_projection_matrix(self.intrinsics, T_camera_marker)
+        self.calibrated = True
 
     def print_devices(self):
         for device in dai.Device.getAllAvailableDevices():
@@ -177,12 +187,17 @@ class OakDDriver:
 
     def run(self, device):
         with device:
-            if (device.getOutputQueue("depth", maxSize=1, blocking=False ).tryGet()) is None:
-                has_depth = False
-                print("OAK-1.5 detected")
-            else:
-                has_depth = True
-                print("OAK-D detected")
+            print("Starting pipeline...")
+            attempts = 1000
+            has_depth = False
+            for _ in range(attempts):
+                print("Trying to get depth stream")
+                if device.getOutputQueue("depth", maxSize=1, blocking=False).tryGet() is not None:
+                    has_depth = True
+                    print("OAK-D detected")
+                    break
+                time.sleep(0.1)
+
                 
             device.setIrLaserDotProjectorBrightness(1200)
             qs = []
@@ -220,6 +235,7 @@ class OakDDriver:
             self.inv_intrinsics = np.linalg.inv(intrinsics)
             self.distortion_coeff = distortion_coeff
             
+            
             if has_depth:
                 pcl_converter = PointCloudVisualizer(intrinsics, w, h, self.visualize)
 
@@ -243,6 +259,8 @@ class OakDDriver:
                                     print(e)
                                     continue
                             color = msgs["colorize"].getCvFrame()
+                            if self.calibrated == False:
+                                self.calibrate(color)
 
                             if self.visualize:
                                 cv2.imshow("color", color)

@@ -10,6 +10,7 @@ from faive_system.src.retargeter import Retargeter
 from faive_system.src.common.utils import numpy_to_float32_multiarray
 import os
 from faive_system.src.viz.visualize_mano import ManoHandVisualizer
+import time
 
 class RetargeterNode(Node):
     def __init__(self, debug=False):
@@ -19,7 +20,9 @@ class RetargeterNode(Node):
         self.declare_parameter("retarget/mjcf_filepath", rclpy.Parameter.Type.STRING)
         self.declare_parameter("retarget/urdf_filepath", rclpy.Parameter.Type.STRING)
         self.declare_parameter("retarget/hand_scheme", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("debug", rclpy.Parameter.Type.BOOL)
+        self.declare_parameter("retarget/mano_adjustments", "")
+        self.declare_parameter("retarget/retargeter_cfg", "")
+        self.declare_parameter("debug", True)
 
         try:
             mjcf_filepath = self.get_parameter("retarget/mjcf_filepath").value
@@ -31,6 +34,15 @@ class RetargeterNode(Node):
         except:
             urdf_filepath = None
         hand_scheme = self.get_parameter("retarget/hand_scheme").value
+        # mano_adjustments's default value is None
+        mano_adjustments = self.get_parameter("retarget/mano_adjustments").value
+        if mano_adjustments == "":
+            mano_adjustments = None
+
+        retargeter_cfg = self.get_parameter("retarget/retargeter_cfg").value
+        if retargeter_cfg == "":
+            retargeter_cfg = None
+
         debug = self.get_parameter("debug").value
 
         # subscribe to ingress topics
@@ -58,6 +70,10 @@ class RetargeterNode(Node):
 
 
     def timer_publish_cb(self):
+        if self.keypoint_positions is None:
+            print("No keypoints received yet")
+            time.sleep(1)
+            return
         try:
             if self.debug:
                 self.mano_hand_visualizer.reset_markers()

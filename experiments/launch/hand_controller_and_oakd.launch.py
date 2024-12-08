@@ -24,17 +24,6 @@ def generate_launch_description():
                 ],
             ),
             
-            Node(
-                package="ingress",
-                executable="rokoko_node.py",
-                name="rokoko_node",
-                output="log",
-                parameters=[
-                    {"rokoko_tracker/ip": "0.0.0.0"},
-                    {"rokoko_tracker/port": 14043},
-                    {"rokoko_tracker/use_coil": True}
-                ],
-            ),
 
             # HAND CONTROLLER NODE
             Node(
@@ -44,31 +33,7 @@ def generate_launch_description():
                 output="screen"
             ),
             
-            # RETARGET NODE
-            Node(
-                package="retargeter",
-                executable="retargeter_node.py",
-                name="retargeter_node",
-                output="log",
-                parameters=[
-                    {
-                        "retarget/urdf_filepath": os.path.join(
-                            get_package_share_directory("viz"),
-                            "models",
-                            "faive_hand_p4",
-                            "urdf",
-                            "p4.urdf",
-                        ),
-                        "retarget/hand_scheme": os.path.join(
-                            get_package_share_directory("viz"),
-                            "models",
-                            "faive_hand_p4",
-                            "scheme_p4.yaml",
-                        )
-                    },
-                ],
-            ),
-            
+
             # VISUALIZATION NODE
             Node(
                 package="viz",
