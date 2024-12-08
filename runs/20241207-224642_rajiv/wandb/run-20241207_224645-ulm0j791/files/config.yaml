@@ -1,0 +1,227 @@
+_wandb:
+    value:
+        cli_version: 0.18.7
+        m: []
+        python_version: 3.11.10
+        t:
+            "1":
+                - 1
+                - 41
+                - 50
+                - 55
+            "2":
+                - 1
+                - 41
+                - 50
+                - 55
+            "3":
+                - 13
+                - 15
+                - 16
+                - 23
+                - 55
+            "4": 3.11.10
+            "5": 0.18.7
+            "8":
+                - 5
+            "12": 0.18.7
+            "13": linux-x86_64
+algo_cfg:
+    value:
+        _target_: srl_il.algo.act.ACTPolicyTrainer
+        algo_cfg:
+            T_target: 20
+            T_z: 1
+            decoder_cfg:
+                activation: relu
+                d_model: 256
+                dim_feedforward: 1024
+                dropout: 0.1
+                nhead: 8
+                num_encoder_layers: 3
+            decoder_group_keys:
+                - qpos
+                - oakd_side_view_images
+            decoder_is_causal: true
+            device: cuda
+            encoder_cfg:
+                activation: relu
+                d_model: 256
+                dim_feedforward: 1024
+                dropout: 0.1
+                nhead: 8
+                num_encoder_layers: 3
+            encoder_group_keys:
+                - qpos
+            encoder_is_causal: false
+            target_dims:
+                actions_hand: 16
+            z_dim: 32
+        obs_encoder_cfg:
+            group_emb_cfg:
+                type: whole_seq_sine
+            obs_groups_cfg:
+                oakd_side_view_images:
+                    datakeys:
+                        - oakd_side_view_images
+                    encoder_cfg:
+                        crop_shape:
+                            - 224
+                            - 352
+                        pretrained: true
+                        resize_shape:
+                            - 270
+                            - 480
+                        type: crop_resnet18
+                    posemb_cfg:
+                        type: none
+                qpos:
+                    datakeys:
+                        - qpos_hand
+                    encoder_cfg:
+                        input_dim_total: 16
+                        type: lowdim_concat
+                    posemb_cfg:
+                        type: none
+            output_dim: 256
+        policy_cfg:
+            policy_aggregator_cfg:
+                k: 0.01
+                type: temporal_aggr
+                update_every: 1
+            policy_bs: 1
+            policy_obs_list:
+                - - qpos_hand
+                  - 1
+                - - oakd_side_view_images
+                  - 2
+            policy_translator: null
+        trainer_cfg:
+            loss_params:
+                kl_weight: 10
+            optimizer_cfg:
+                act_decoder:
+                    lr: 0.0001
+                    optm_cls: torch.optim.Adam
+                act_encoder:
+                    lr: 0.0001
+                    optm_cls: torch.optim.Adam
+                embeds:
+                    lr: 0.0001
+                    optm_cls: torch.optim.Adam
+                obs_encoder:
+                    lr: 0.0001
+                    optm_cls: torch.optim.Adam
+                projs:
+                    lr: 0.0001
+                    optm_cls: torch.optim.Adam
+batch_size:
+    value: 100
+data_augmentation_cfg:
+    value:
+        data_augments:
+            - mean: 0
+              outname: qpos_hand
+              std: 0.01
+              type: gaussian_noise
+dataset_cfg:
+    value:
+        batch_size: 100
+        data:
+            _target_: srl_il.dataset.test_dataset.test_train_robomimic
+            data_directory: data_12_02_2024/processed
+            keys_global: []
+            keys_traj:
+                - - actions_hand
+                  - actions_hand
+                  - 0
+                  - null
+                - - qpos_hand
+                  - qpos_hand
+                  - 0
+                  - 1
+                - - oakd_side_view_images
+                  - oakd_side_view/color
+                  - 0
+                  - 1
+            pad_after: true
+            pad_before: false
+            pad_type: near
+            random_seed: 43
+            test_fraction: 0.1
+            val_fraction: 0.1
+            window_size_test: 20
+            window_size_train: 20
+        num_workers: 2
+        pin_memory: true
+debugrun:
+    value: true
+lr_scheduler_cfg:
+    value:
+        act_decoder:
+            params:
+                gamma: 0.95
+                step_size: 10000
+            scheduler_cls: torch.optim.lr_scheduler.StepLR
+            step_with_metrics: false
+            type: torch
+        act_encoder:
+            params:
+                gamma: 0.95
+                step_size: 1000
+            scheduler_cls: torch.optim.lr_scheduler.StepLR
+            step_with_metrics: false
+            type: torch
+        obs_encoder:
+            params:
+                gamma: 0.95
+                step_size: 10000
+            scheduler_cls: torch.optim.lr_scheduler.StepLR
+            step_with_metrics: false
+            type: torch
+normalizer_cfg:
+    value:
+        actions_hand:
+            dataname: actions_hand
+            min_max: true
+            type: dataset_stats
+        oakd_side_view_images:
+            mean:
+                - - - 0.485
+                - - - 0.456
+                - - - 0.406
+            std:
+                - - - 0.229
+                - - - 0.224
+                - - - 0.225
+            type: hardcode
+        qpos_hand:
+            dataname: qpos_hand
+            type: dataset_stats
+output_dir:
+    value: runs/20241207-224642_rajiv
+pipeline:
+    value:
+        _target_: srl_il.pipeline.imitation_learning.ImitationLearningPipeline
+seed:
+    value: 43
+training_cfg:
+    value:
+        num_epochs: 5
+        num_eval_steps_per_epoch: 2
+        num_steps_per_epoch: 10
+        rollout:
+            enabled: false
+        steps_saving: 10
+        visualization:
+            enabled: true
+            every_n_epoch: 10
+            num_samples: 5
+wandb_cfg:
+    value:
+        mode: online
+        project: rajiv
+        run_name: 20241207-224642_rajiv
+        tags:
+            - test
+            - act

@@ -1,0 +1,189 @@
+batch_size: 100
+seed: 43
+debugrun: true
+wandb_cfg:
+  project: rajiv
+  run_name: 20241207-224642_rajiv
+  tags:
+  - test
+  - act
+  mode: online
+output_dir: runs/20241207-224642_rajiv
+pipeline:
+  _target_: srl_il.pipeline.imitation_learning.ImitationLearningPipeline
+dataset_cfg:
+  data:
+    _target_: srl_il.dataset.test_dataset.test_train_robomimic
+    data_directory: data_12_02_2024/processed
+    test_fraction: 0.1
+    val_fraction: 0.1
+    window_size_train: 20
+    window_size_test: 20
+    keys_traj:
+    - - actions_hand
+      - actions_hand
+      - 0
+      - null
+    - - qpos_hand
+      - qpos_hand
+      - 0
+      - 1
+    - - oakd_side_view_images
+      - oakd_side_view/color
+      - 0
+      - 1
+    keys_global: []
+    pad_before: false
+    pad_after: true
+    pad_type: near
+    random_seed: 43
+  batch_size: 100
+  pin_memory: true
+  num_workers: 2
+algo_cfg:
+  _target_: srl_il.algo.act.ACTPolicyTrainer
+  algo_cfg:
+    device: cpu
+    target_dims:
+      actions_hand: 16
+    z_dim: 32
+    T_target: 20
+    T_z: 1
+    encoder_is_causal: false
+    decoder_is_causal: true
+    encoder_group_keys:
+    - qpos
+    decoder_group_keys:
+    - qpos
+    - oakd_side_view_images
+    encoder_cfg:
+      d_model: 256
+      nhead: 8
+      num_encoder_layers: 3
+      dim_feedforward: 1024
+      dropout: 0.1
+      activation: relu
+    decoder_cfg:
+      d_model: 256
+      nhead: 8
+      num_encoder_layers: 3
+      dim_feedforward: 1024
+      dropout: 0.1
+      activation: relu
+  trainer_cfg:
+    loss_params:
+      kl_weight: 10
+    optimizer_cfg:
+      act_encoder:
+        optm_cls: torch.optim.Adam
+        lr: 0.0001
+      act_decoder:
+        optm_cls: torch.optim.Adam
+        lr: 0.0001
+      obs_encoder:
+        optm_cls: torch.optim.Adam
+        lr: 0.0001
+      projs:
+        optm_cls: torch.optim.Adam
+        lr: 0.0001
+      embeds:
+        optm_cls: torch.optim.Adam
+        lr: 0.0001
+  obs_encoder_cfg:
+    output_dim: 256
+    obs_groups_cfg:
+      qpos:
+        datakeys:
+        - qpos_hand
+        encoder_cfg:
+          type: lowdim_concat
+          input_dim_total: 16
+        posemb_cfg:
+          type: none
+      oakd_side_view_images:
+        datakeys:
+        - oakd_side_view_images
+        encoder_cfg:
+          type: crop_resnet18
+          resize_shape:
+          - 270
+          - 480
+          crop_shape:
+          - 224
+          - 352
+          pretrained: true
+        posemb_cfg:
+          type: none
+    group_emb_cfg:
+      type: whole_seq_sine
+  policy_cfg:
+    policy_bs: 1
+    policy_translator: null
+    policy_aggregator_cfg:
+      type: temporal_aggr
+      update_every: 1
+      k: 0.01
+    policy_obs_list:
+    - - qpos_hand
+      - 1
+    - - oakd_side_view_images
+      - 2
+lr_scheduler_cfg:
+  act_encoder:
+    type: torch
+    scheduler_cls: torch.optim.lr_scheduler.StepLR
+    params:
+      step_size: 1000
+      gamma: 0.95
+    step_with_metrics: false
+  act_decoder:
+    type: torch
+    scheduler_cls: torch.optim.lr_scheduler.StepLR
+    params:
+      step_size: 10000
+      gamma: 0.95
+    step_with_metrics: false
+  obs_encoder:
+    type: torch
+    scheduler_cls: torch.optim.lr_scheduler.StepLR
+    params:
+      step_size: 10000
+      gamma: 0.95
+    step_with_metrics: false
+training_cfg:
+  num_epochs: 5
+  num_steps_per_epoch: 10
+  num_eval_steps_per_epoch: 2
+  steps_saving: 10
+  rollout:
+    enabled: false
+  visualization:
+    enabled: true
+    num_samples: 5
+    every_n_epoch: 10
+normalizer_cfg:
+  actions_hand:
+    type: dataset_stats
+    min_max: true
+    dataname: actions_hand
+  qpos_hand:
+    type: dataset_stats
+    dataname: qpos_hand
+  oakd_side_view_images:
+    type: hardcode
+    mean:
+    - - - 0.485
+    - - - 0.456
+    - - - 0.406
+    std:
+    - - - 0.229
+    - - - 0.224
+    - - - 0.225
+data_augmentation_cfg:
+  data_augments:
+  - outname: qpos_hand
+    type: gaussian_noise
+    mean: 0.0
+    std: 0.01
+sim_env_cfg: {}
+projection_visualizer_cfg: {}

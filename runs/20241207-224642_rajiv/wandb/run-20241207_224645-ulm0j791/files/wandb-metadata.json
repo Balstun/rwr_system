@@ -1,0 +1,43 @@
+{
+  "os": "Linux-5.15.0-1072-aws-x86_64-with-glibc2.31",
+  "python": "3.11.10",
+  "startedAt": "2024-12-07T22:46:45.424199Z",
+  "program": "/home/ubuntu/biomimic/srl_il/scripts/run_pipeline.py",
+  "codePath": "scripts/run_pipeline.py",
+  "git": {
+    "remote": "git@github.com:srl-ethz/srl_il.git",
+    "commit": "c6e2eef5cd65519416fdf574327bd0afcc4c6e12"
+  },
+  "email": "rajiv.bharadwaj8@gmail.com",
+  "root": "runs/20241207-224642_rajiv",
+  "host": "ip-172-31-42-91",
+  "username": "ubuntu",
+  "executable": "/home/ubuntu/miniforge3/envs/srl_il/bin/python",
+  "codePathLocal": "scripts/run_pipeline.py",
+  "cpu_count": 4,
+  "cpu_count_logical": 8,
+  "gpu": "Tesla T4",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "520120602624",
+      "used": "57155248128"
+    }
+  },
+  "memory": {
+    "total": "33164881920"
+  },
+  "cpu": {
+    "count": 4,
+    "countLogical": 8
+  },
+  "gpu_nvidia": [
+    {
+      "name": "Tesla T4",
+      "memoryTotal": "16106127360",
+      "cudaCores": 2560,
+      "architecture": "Turing"
+    }
+  ],
+  "cudaVersion": "12.7"
+}
