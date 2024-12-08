@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+from typing import Callable
 import numpy as np
 import time
 from copy import deepcopy
@@ -8,16 +9,33 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point, TransformStamped, Vector3, Quaternion, PoseStamped
 from tf2_ros import TransformBroadcaster
+from custom_interfaces.msg import SubsystemState
 
 from pydrake.math import RigidTransform as DrakeRigidTransform
 from pydrake.math import RollPitchYaw as DrakeRollPitchYaw
 from pydrake.common.eigen_geometry import Quaternion as DrakeQuaternion
+from functools import wraps
 
 
+def check_subsystem_enabled(func: Callable):
+    """
+    Decorator to check if node is enabled
+    """
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self.enabled:
+            return func(self, *args, **kwargs)
+        else:
+            self.get_logger().warn(f"{func.__name__} not performed because FRANKA subsystem is not enabled.")
+            return None
+
+    return wrapper
 
 class RokokoCoilDemo(Node):
     def __init__(self):
         super().__init__("rokoko_coil_demo")
+
+        self.enabled = False
 
         self.X_bCP_G = None  # DrakeRigidTransform from coil pro to glove wrist
         self.X_bCP_G_init = (
@@ -34,6 +52,8 @@ class RokokoCoilDemo(Node):
         self.X_W_fEE_init = None
         self.X_W_fEE = None
 
+        self.subsystem_state_sub = self.create_subscription(SubsystemState, "/biomimic/subsystem_state", self.update_subsystem_state_cb, 10)
+
         # To ignore wrist: replace "/hand/wrist_pos_roll_cmd" with "/ingress/wrist"
         self.rokoko_pose_sub = self.create_subscription( 
             PoseStamped, "/ingress/right_lower_arm", self.rokoko_pose_callback, 10
@@ -49,6 +69,9 @@ class RokokoCoilDemo(Node):
         self.arm_subscriber = self.create_subscription(
             PoseStamped, "/franka/end_effector_pose", self.arm_pose_callback, 10
         )
+
+    def update_subsystem_state_cb(self, msg: SubsystemState):
+        self.enabled = msg.franka_enabled
 
     def arm_pose_callback(self, msg: PoseStamped):
         orientation = msg.pose.orientation
@@ -100,6 +123,7 @@ class RokokoCoilDemo(Node):
 
         return X_W_fEE_d
 
+    @check_subsystem_enabled
     def publish_target_pose(self, X_W_fEE_d: DrakeRigidTransform):
         msg = PoseStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
