@@ -464,13 +464,16 @@ class Retargeter:
         return joints
     
     def retarget(self, joints, debug_dict=None):
-        elbow_marker_active = True
-        if elbow_marker_active:
+        rokoko_glove_active = False if joints.shape[0] == 21 else True
+        # Remove the rightLowerArm joint if rokoko glove is active
+        if rokoko_glove_active:
             joints = np.delete(joints, 1, axis=0)
         normalized_joint_pos, mano_center_and_rot = (
             retarget_utils.normalize_points_to_hands_local(joints)
         )
-        normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
+        # Apply mano adjustments for calibrated rokoko gloves
+        if rokoko_glove_active:
+            normalized_joint_pos = self.adjust_mano_fingers(normalized_joint_pos)
         normalized_joint_pos = (
             normalized_joint_pos @ self.model_rotation.T + self.model_center
         )
