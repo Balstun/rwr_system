@@ -36,7 +36,7 @@ class RokokoCoilDemo(Node):
 
         # To ignore wrist: replace "/hand/wrist_pos_roll_cmd" with "/ingress/wrist"
         self.rokoko_pose_sub = self.create_subscription( 
-            PoseStamped, "/hand/wrist_pos_roll_cmd", self.rokoko_pose_callback, 10
+            PoseStamped, "/ingress/right_lower_arm", self.rokoko_pose_callback, 10
         )
 
         # publishes to franka/end_effector_pose_cmd
