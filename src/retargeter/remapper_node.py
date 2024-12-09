@@ -12,10 +12,18 @@ class RemapperNode(Node):
             'joint_to_motor_node/joint_positions',
             10
         )
+
+        self.num_joints = 16
+
+        self.remapped_joint_angles = np.zeros(self.num_joints - 1)
+        self.wrist_cmd = 0.0
+        
+        self.timer_ = self.create_timer(0.001, self.pub_joint_angles)
+
         self._mano_keypoints_sub = self.create_subscription(
             Float32MultiArray,
             '/hand/policy_output',
-            self.remap_callback,
+            self.remap_joints,
             10
         )
         self._wrist_cmd_sub = self.create_subscription(
@@ -41,25 +49,22 @@ class RemapperNode(Node):
             13: 1, # thumb_adb_angle
             14: 2, # thumb_mcp_angle (pip?)
         }
-        self.num_joints = 16
-        self.wrist_cmd = 0.0
 
-    def remap_callback(self, msg):
-        target_joint_angles = msg.data
-        remapped_joints = self.remap_joints(target_joint_angles)
-        self._joint_positions_pub.publish(remapped_joints)
+    def pub_joint_angles(self):
+        msg = Float32MultiArray()
+        data = np.hstack((self.remapped_joint_angles, np.array(self.wrist_cmd)))
+        msg.data = data.tolist()
 
-    def remap_joints(self, joints):
-        remapped_joints = Float32MultiArray()
-        remapped_joints.data = [0.0] * self.num_joints
+        self._joint_positions_pub.publish(msg)
 
-        for i in range(self.num_joints):
-            if i == self.num_joints - 1:
-                remapped_joints.data[i] = self.wrist_cmd
-            else:
-                remapped_joints.data[i] = joints[self.joint_remapping[i]]
+    def remap_joints(self, msg: Float32MultiArray):
+        joints = msg.data
 
-        return remapped_joints
+        remapped_joint_angles = [0.0] * (self.num_joints - 1)
+        for i in range(len(joints)):
+            remapped_joint_angles[i] = joints[self.joint_remapping[i]]
+
+        self.remapped_joint_angles = np.array(remapped_joint_angles)
     
     def wrist_cmd_callback(self, msg):
         self.wrist_cmd = msg.data

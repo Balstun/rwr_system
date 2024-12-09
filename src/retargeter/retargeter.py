@@ -1,6 +1,6 @@
 # dependencies for retargetet
 import time
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 from numpy.typing import NDArray
 import torch
 import numpy as np
@@ -13,20 +13,7 @@ from .hand_cfgs.p1_cfg import P1HandCfg
 from .hand_cfgs.p4_cfg import P4HandCfg
 from typing import Union
 from scipy.spatial.transform import Rotation
-from functools import wraps
 
-def check_subsystem_enabled(func: Callable):
-    """
-    Decorator to check if node is enabled
-    """
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if self.node.enabled:
-            return func(self, *args, **kwargs)
-        else:
-            self.node.get_logger().warn(f"{func.__name__} not performed because node is not enabled.")
-            return None
-    return wrapper
 
 class Retargeter:
     """
@@ -479,7 +466,6 @@ class Retargeter:
 
         return joints
     
-    @check_subsystem_enabled
     def retarget(self, joints, debug_dict=None):
         rokoko_glove_active = False if joints.shape[0] == 21 else True
         # Remove the rightLowerArm joint if rokoko glove is active

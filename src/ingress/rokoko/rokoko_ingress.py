@@ -2,11 +2,9 @@
 
 import socket
 import json
-from typing import Callable
 import numpy as np
 import threading
 from scipy.spatial.transform import Rotation
-from functools import wraps
 
 MANO_KEYPOINTS_LIST = [
     "rightHand",
@@ -32,19 +30,6 @@ MANO_KEYPOINTS_LIST = [
     "rightLittleDistal",
     "rightLittleTip",
 ]
-
-def check_subsystem_enabled(func: Callable):
-    """
-    Decorator to check if node is enabled
-    """
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if self.node.enabled:
-            return func(self, *args, **kwargs)
-        else:
-            self.node.get_logger().warn(f"{func.__name__} not performed because node is not enabled.")
-            return None
-    return wrapper
 
 
 class RokokoTracker:
@@ -124,7 +109,6 @@ class RokokoTracker:
                 return None
             return self.right_lower_arm_position.copy(), self.right_lower_arm_quat.copy()
 
-    @check_subsystem_enabled
     def read_rokoko_data(self):
         while self.keep_running:
             received_data, addr = self.sock.recvfrom(

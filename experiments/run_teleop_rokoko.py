@@ -10,6 +10,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Point, TransformStamped, Vector3, Quaternion, PoseStamped
 from tf2_ros import TransformBroadcaster
 from custom_interfaces.msg import SubsystemState
+from faive_system.src.common.subsystem_poller import SubsystemPoller
 
 from pydrake.math import RigidTransform as DrakeRigidTransform
 from pydrake.math import RollPitchYaw as DrakeRollPitchYaw
@@ -23,10 +24,10 @@ def check_subsystem_enabled(func: Callable):
     """
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if self.enabled:
+        if self.node.enabled:
             return func(self, *args, **kwargs)
         else:
-            self.get_logger().warn(f"{func.__name__} not performed because FRANKA subsystem is not enabled.")
+            self.node.get_logger().warn(f"{func.__name__} not performed because FRANKA subsystem is not enabled.", throttle_duration_sec=2.0)
             return None
 
     return wrapper
@@ -52,7 +53,7 @@ class RokokoCoilDemo(Node):
         self.X_W_fEE_init = None
         self.X_W_fEE = None
 
-        self.subsystem_state_sub = self.create_subscription(SubsystemState, "/biomimic/subsystem_state", self.update_subsystem_state_cb, 10)
+        self.subsystem_poller = SubsystemPoller(self, "franka_enabled")
 
         # To ignore wrist: replace "/hand/wrist_pos_roll_cmd" with "/ingress/wrist"
         self.rokoko_pose_sub = self.create_subscription( 
@@ -69,9 +70,6 @@ class RokokoCoilDemo(Node):
         self.arm_subscriber = self.create_subscription(
             PoseStamped, "/franka/end_effector_pose", self.arm_pose_callback, 10
         )
-
-    def update_subsystem_state_cb(self, msg: SubsystemState):
-        self.enabled = msg.franka_enabled
 
     def arm_pose_callback(self, msg: PoseStamped):
         orientation = msg.pose.orientation

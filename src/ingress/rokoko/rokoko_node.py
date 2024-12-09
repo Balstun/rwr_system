@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-from typing import Callable
 import rclpy
-from rclpy.node import MutuallyExclusiveCallbackGroup, Node
-import numpy as np
-from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout
+from rclpy.node import Node
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from rokoko_ingress import RokokoTracker
 from faive_system.src.common.utils import numpy_to_float32_multiarray    
+from faive_system.src.common.subsystem_poller import SubsystemPoller
 from functools import wraps
+from typing import Callable
+
 
 class RokokoNode(Node):
     def __init__(self, debug=False):
         super().__init__("rokoko_node")
+
+        self.subsystem_poller = SubsystemPoller(self, "rokoko_enabled")
         self.enabled = False
 
         # start tracker
@@ -45,12 +48,25 @@ class RokokoNode(Node):
             PoseStamped, "/ingress/elbow", 10
         )
 
-
         self.debug = debug
+
+
+    def check_subsystem_enabled(self, func: Callable):
+        """
+        Decorator to check if node is enabled
+        """
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if self.enabled:
+                return func(*args, **kwargs)
+            else:
+                self.get_logger().warn(f"{func.__name__} not performed because rokoko ingress is not enabled.", throttle_duration_sec=2.0)
+                return None
+        return wrapper
 
     def timer_publish_cb(self):
 
-        #self._logger.info("Current debug flag: {}".format(self.tracker.debug_flag))
+        # self._logger.info("Current debug flag: {}".format(self.tracker.debug_flag))
 
         key_points = self.tracker.get_keypoint_positions()
         wait_cnt = 1
@@ -62,7 +78,8 @@ class RokokoNode(Node):
         keypoint_positions, timestamp = key_points
 
         keypoint_positions_msg = numpy_to_float32_multiarray(keypoint_positions)
-        self.ingress_mano_pub.publish(keypoint_positions_msg)
+
+        self.check_subsystem_enabled(self.ingress_mano_pub.publish)(keypoint_positions_msg)
 
         if self.use_coil:
             wrist_pos, wrist_rot = self.tracker.get_wrist_pose()
@@ -82,7 +99,7 @@ class RokokoNode(Node):
             )
 
             # Publish the message
-            self.ingress_wrist_pub.publish(right_lower_arm_msg)
+            self.check_subsystem_enabled(self.ingress_wrist_pub.publish)(right_lower_arm_msg)
 
             # Do the same for right_lower_arm ------------------------------------------------
 
@@ -104,22 +121,7 @@ class RokokoNode(Node):
             )
 
             # Publish the message
-            self.ingress_right_lower_arm_pub.publish(right_lower_arm_msg)
-
-
-def check_subsystem_enabled(func: Callable):
-    """
-    Decorator to check if node is enabled
-    """
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if self.node.enabled:
-            return func(self, *args, **kwargs)
-        else:
-            self.node.get_logger().warn(f"{func.__name__} not performed because node is not enabled.")
-            return None
-    return wrapper
-
+            self.check_subsystem_enabled(self.ingress_right_lower_arm_pub.publish)(right_lower_arm_msg)
 
 def main(args=None):
     rclpy.init(args=args)
