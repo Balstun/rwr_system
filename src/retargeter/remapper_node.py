@@ -3,10 +3,30 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, Float32
 import numpy as np
+from typing import Callable
+from functools import wraps
+from faive_system.src.common.subsystem_poller import SubsystemPoller
+
+def check_subsystem_enabled(func: Callable):
+    """
+    Decorator to check if node is enabled
+    """
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self.enabled:
+            return func(self, *args, **kwargs)
+        else:
+            self.get_logger().warn(f"{func.__name__} not performed because node is not enabled.", skip_first=False, throttle_duration_sec=1.0)
+            return None
+    return wrapper
 
 class RemapperNode(Node):
     def __init__(self):
         super().__init__('remapper_node')
+        
+        self.subsystem_poller = SubsystemPoller(self, "retargeter_enabled")
+        self.enabled = False
+
         self._joint_positions_pub = self.create_publisher(
             Float32MultiArray,
             'joint_to_motor_node/joint_positions',
@@ -18,7 +38,7 @@ class RemapperNode(Node):
         self.remapped_joint_angles = np.zeros(self.num_joints - 1)
         self.wrist_cmd = 0.0
         
-        self.timer_ = self.create_timer(0.001, self.pub_joint_angles)
+        self.timer_ = self.create_timer(0.01, self.pub_joint_angles)
 
         self._mano_keypoints_sub = self.create_subscription(
             Float32MultiArray,
@@ -50,6 +70,8 @@ class RemapperNode(Node):
             14: 2, # thumb_mcp_angle (pip?)
         }
 
+
+    @check_subsystem_enabled
     def pub_joint_angles(self):
         msg = Float32MultiArray()
         data = np.hstack((self.remapped_joint_angles, np.array(self.wrist_cmd)))

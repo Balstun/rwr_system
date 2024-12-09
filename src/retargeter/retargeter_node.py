@@ -9,7 +9,6 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
 from faive_system.src.retargeter import Retargeter
 from faive_system.src.common.utils import numpy_to_float32_multiarray
-from faive_system.src.common.subsystem_poller import SubsystemPoller
 from faive_system.src.viz.visualize_mano import ManoHandVisualizer
 from std_msgs.msg import ColorRGBA
 from functools import wraps
@@ -19,7 +18,6 @@ class RetargeterNode(Node):
     def __init__(self, debug=False):
         super().__init__("rokoko_node")
 
-        self.subsystem_poller = SubsystemPoller(self, "retargeter_enabled")
 
         # start retargeter
         self.declare_parameter("retarget/mjcf_filepath", rclpy.Parameter.Type.STRING)
@@ -79,18 +77,6 @@ class RetargeterNode(Node):
 
         self.timer = self.create_timer(0.005, self.timer_publish_cb)
 
-    def check_subsystem_enabled(self, func: Callable):
-        """
-        Decorator to check if node is enabled
-        """
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if self.enabled:
-                return func(*args, **kwargs)
-            else:
-                self.get_logger().warn(f"{func.__name__} not performed because node is not enabled.", skip_first=False, throttle_duration_sec=1.0)
-                return None
-        return wrapper
 
     def ingress_mano_cb(self, msg):
         self.keypoint_positions = np.array(msg.data).reshape(-1, 3)
@@ -150,7 +136,7 @@ class RetargeterNode(Node):
                     stamp=self.get_clock().now().to_msg(),
                 )
 
-            self.check_subsystem_enabled(self.joints_pub.publish)(numpy_to_float32_multiarray(np.deg2rad(joint_angles)))
+            self.joints_pub.publish(numpy_to_float32_multiarray(np.deg2rad(joint_angles)))
 
             if self.debug:
                 self.mano_hand_visualizer.publish_markers()

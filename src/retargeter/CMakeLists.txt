@@ -31,7 +31,6 @@ find_package(tf2_eigen REQUIRED)
 install(PROGRAMS
     retargeter_node.py
     remapper_node.py
-    subsystem_poller.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

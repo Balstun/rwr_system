@@ -24,10 +24,10 @@ def check_subsystem_enabled(func: Callable):
     """
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if self.node.enabled:
+        if self.enabled:
             return func(self, *args, **kwargs)
         else:
-            self.node.get_logger().warn(f"{func.__name__} not performed because FRANKA subsystem is not enabled.", throttle_duration_sec=2.0)
+            self.get_logger().warn(f"{func.__name__} not performed because FRANKA subsystem is not enabled.", throttle_duration_sec=2.0)
             return None
 
     return wrapper

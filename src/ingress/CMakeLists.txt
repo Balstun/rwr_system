@@ -39,7 +39,6 @@ install(PROGRAMS
 install(PROGRAMS
     rokoko/rokoko_node.py
     rokoko/rokoko_ingress.py
-    subsystem_poller.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
