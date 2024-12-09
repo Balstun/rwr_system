@@ -191,6 +191,9 @@ class RokokoCoilDemo(Node):
         self.Xr_W_G_init_fEE_init = self.Xr_W_G_init.inverse() @ self.Xr_W_fEE_init
 
         self.calibrated = True
+        for _ in range(3):
+            time.sleep(0.5)
+            print('\a')
         self.get_logger().info("Calibration complete")
 
     def publish_tf(self, frame_id, X: DrakeRigidTransform, parent_frame_id):
