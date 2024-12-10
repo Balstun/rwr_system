@@ -158,10 +158,13 @@ class RokokoCoilDemo(Node):
             time.sleep(0.2)
             self.X_W_fEE_init = deepcopy(self.X_W_fEE)
 
-        start_target = np.array(
-            [[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0.4388, -0.0679, 0.2452, 1]]
-        ).T
-        start_target = DrakeRigidTransform(start_target)
+        start_target_orientation = DrakeQuaternion(-0.71198, 0.14929, 0.15439, 0.66854)
+        start_target_position = [0.43887, -0.06797, 0.24523]
+        # start_target = np.array(
+        #     [[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0.4388, -0.0679, 0.2452, 1]]
+        # ).T
+        # start_target = DrakeRigidTransform(start_target)
+        start_target = DrakeRigidTransform(start_target_orientation, start_target_position,)
         self.publish_target_pose(start_target)
 
         input("Press enter to calibrate the robot")
