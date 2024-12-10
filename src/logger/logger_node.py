@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+from typing import Tuple
 import rclpy
 from rclpy.node import Node
 import rosbag2_py
@@ -56,8 +57,8 @@ class DemoLogger(Node):
         else:
             self.get_logger().info(f"Using existing base directory '{self.base_path}'.")
 
-    def get_segmentation_masks(self, topic):
-        client = self.create_client(GetSegmentationMask, topic)
+    def get_segmentation_masks(self) -> Tuple[Image, Image, Image]:
+        client = self.create_client(GetSegmentationMask, "/segment_svc")
         while not client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting...')
 
@@ -66,7 +67,8 @@ class DemoLogger(Node):
         resp: GetSegmentationMask.Response = client.call(request)
 
         if resp.success:
-            return resp.image
+            return resp.debug_img, resp.cube_mask, resp.tray_mask
+        raise Exception("Error in calling segmentation service")
         
 
     def run_logger(self):
@@ -117,9 +119,7 @@ class DemoLogger(Node):
             self.delete_recording(task_folder_bag)
 
     def publish_segmentation(self):
-        cube_mask = self.get_segmentation_masks("/target_cube_mask_svc")
-        tray_mask = self.get_segmentation_masks("/target_tray_mask_svc")
-        debug_mask = self.get_segmentation_masks("/segmentation_debug_img_svc")
+        debug_mask, cube_mask, tray_mask = self.get_segmentation_masks()
 
         cube_pub = self.create_publisher(Image, self.cube_mask_const_topic, 10)
         tray_pub = self.create_publisher(Image, self.tray_mask_const_topic, 10)
