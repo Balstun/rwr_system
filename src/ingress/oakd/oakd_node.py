@@ -19,7 +19,7 @@ class OakDPublisher(Node):
         self.declare_parameter("visualize", False)
         self.declare_parameter("enable_front_camera", True)
         self.declare_parameter("enable_side_camera", True)
-        self.declare_parameter("enable_wrist_camera", False)
+        self.declare_parameter("enable_wrist_camera", True)
 
         enable_front_camera = self.get_parameter("enable_front_camera").value
         enable_side_camera = self.get_parameter("enable_side_camera").value
@@ -34,11 +34,13 @@ class OakDPublisher(Node):
         if enable_wrist_camera:
             camera_dict["wrist_view"] = OAK_CAMS_LIST["WRIST_CAMERA"]
         self.camera_dict = camera_dict
+        self.get_logger().info("Camera dict: "+str(camera_dict))
         self.visualize = self.get_parameter("visualize").value
 
         self.init_cameras()
 
     def init_cameras(self):
+        self.get_logger().info("Initializing cameras")
         for camera_name, camera_id in self.camera_dict.items():
             self.camera_dict[camera_name] = {
                 "lock": RLock(),
@@ -63,29 +65,27 @@ class OakDPublisher(Node):
 
     def recv_oakd_images(self, color, depth, camera_name):
         with self.camera_dict[camera_name]["lock"]:
-            (
-                self.camera_dict[camera_name]["color"],
-                self.camera_dict[camera_name]["depth"],
-            ) = (color, depth)
+            #self.get_logger().info("Receiving images")
+            #self.get_logger().info("Is none: {}".format(color is None))
+            #self.get_logger().info("Col shape: {}".format(color.shape))
+
+            self.camera_dict[camera_name]["color"] = color
 
     def publish_images(self):
         for camera_name in self.camera_dict.keys():
             with self.camera_dict[camera_name]["lock"]:
                 if (
                     self.camera_dict[camera_name]["color"] is None
-                    or self.camera_dict[camera_name]["depth"] is None
                 ):
                     continue
 
-                color, depth = deepcopy(
-                    self.camera_dict[camera_name]["color"]
-                ), deepcopy(self.camera_dict[camera_name]["depth"])
-
+                color= deepcopy(self.camera_dict[camera_name]["color"])
+       
                 # 180 flip (need to do it for all oakd cameras for now)
                 color = cv2.rotate(color, cv2.ROTATE_180)
-                depth = cv2.rotate(depth, cv2.ROTATE_180)
 
                 # publish normal images
+
                 try:
                     header = Header()
                     header.stamp = self.get_clock().now().to_msg()
@@ -93,25 +93,13 @@ class OakDPublisher(Node):
                     output_img_rgb = self.bridge.cv2_to_imgmsg(
                         color, "bgr8", header=header
                     )
+                    self.get_logger().info("Publishing image")
                     self.camera_dict[camera_name]["rgb_output_pub"].publish(
                         output_img_rgb
                     )
                     print(f"Published image for {camera_name}")
                 except CvBridgeError as e:
                     self.get_logger().error(f"Error publishing color image: {e}")
-
-                try:
-                    header = Header()
-                    header.stamp = self.get_clock().now().to_msg()
-                    header.frame_id = "world"
-                    output_img_depth = self.bridge.cv2_to_imgmsg(
-                        depth, "mono16", header=header
-                    )
-                    self.camera_dict[camera_name]["depth_output_pub"].publish(
-                        output_img_depth
-                    )
-                except CvBridgeError as e:
-                    self.get_logger().error(f"Error publishing depth image: {e}")
 
                 # publish camera info
                 try:
