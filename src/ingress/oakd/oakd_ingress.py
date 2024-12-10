@@ -226,6 +226,8 @@ class OakDDriver:
             serial_no = device.getMxId()
             sync = HostSync()
             depth_vis, color, rect_left, rect_right = None, None, None, None
+            
+            depth = None
 
             while True:
                 for q in qs:
@@ -267,6 +269,7 @@ class OakDDriver:
 
                             if self.callback is not None:
                                 if self.camera_name is not None:
+                                    if depth is None: print("ERROR: Depth is None in OakDDriver")
                                     self.callback(color, depth, self.camera_name)
                                 else:
                                     self.callback(color, depth)
