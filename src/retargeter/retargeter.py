@@ -323,6 +323,8 @@ class Retargeter:
         start_vectors_untuned = []
         end_vectors_untuned = []
 
+        bodies_of_interest = ["thumb_base", "thumb_pp", "thumb_mp", "thumb_tip", "thumb_pp_virt", "thumb_mp_virt", "thumb_tip_virt"]
+
         for step in range(opt_steps):
             chain_transforms = self.chain.forward_kinematics(
                 self.joint_map @ (self.gc_joints / (180 / np.pi)) # Guess of tendon lengths and we compute the joint angles. NOT ACTUATOR ANGLES. 
@@ -342,6 +344,10 @@ class Retargeter:
                 mujoco_finger_knuckles[finger + "_knuckle"] = chain_transforms[finger_knuckle].transform_points(
                     self.root
                 )
+            
+            for body in bodies_of_interest:
+                if body in chain_transforms.keys():
+                    print(f"{body}: {chain_transforms[body].transform_points(self.root)}")
 
             other_mujoco_pts = {
                 "palm": chain_transforms["palm"].transform_points(self.root), # TODO FIX
