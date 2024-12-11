@@ -1,9 +1,11 @@
 #!/bin/env python3
 
+from typing import Tuple
 import rclpy
 from rclpy.node import Node
 import rosbag2_py
 from std_msgs.msg import Float32MultiArray, String, Float32
+from custom_interfaces.srv import GetSegmentationMask
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import Image
 from bag2h5_converter import convert_to_h5
@@ -59,6 +61,9 @@ class DemoLogger(Node):
         self.writer = None
         self.topics_to_record = topics_to_record
         self.task_description_topic = "/task_description"
+        self.tray_mask_const_topic = "/target_tray_mask"
+        self.cube_mask_const_topic = "/target_cube_mask"
+        self.debug_mask_const_topic = "/segmentation_debug_img"
         
         if self.task_description_topic not in self.topics_to_record:
             self.topics_to_record.append(self.task_description_topic)
@@ -69,6 +74,20 @@ class DemoLogger(Node):
             self.get_logger().info(f"Base directory '{self.base_path}' created.")
         else:
             self.get_logger().info(f"Using existing base directory '{self.base_path}'.")
+
+    def get_segmentation_masks(self) -> Tuple[Image, Image, Image]:
+        client = self.create_client(GetSegmentationMask, "/segment_svc")
+        while not client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = GetSegmentationMask.Request()
+
+        resp: GetSegmentationMask.Response = client.call(request)
+
+        if resp.success:
+            return resp.debug_img, resp.cube_mask, resp.tray_mask
+        raise Exception("Error in calling segmentation service")
+        
 
     def run_logger(self):
         # Get task name (subfolder within the base path)
@@ -95,6 +114,9 @@ class DemoLogger(Node):
         # Publish task description as a String message
         self.publish_task_description(self.task_description)
 
+        # Publish Segmentation from service as a topic (HACK)
+        self.publish_segmentation()
+
         # Wait for user to stop recording
         input("Press Enter to stop recording...")
         self.stop_recording()
@@ -113,6 +135,17 @@ class DemoLogger(Node):
         else:
             self.get_logger().info("Recording discarded.")
             self.delete_recording(task_folder_bag)
+
+    def publish_segmentation(self):
+        debug_mask, cube_mask, tray_mask = self.get_segmentation_masks()
+
+        cube_pub = self.create_publisher(Image, self.cube_mask_const_topic, 10)
+        tray_pub = self.create_publisher(Image, self.tray_mask_const_topic, 10)
+        debug_pub = self.create_publisher(Image, self.debug_mask_const_topic, 10)
+
+        cube_pub.publish(cube_mask)
+        tray_pub.publish(tray_mask)
+        debug_pub.publish(debug_mask)
 
     def publish_task_description(self, description):
         # Create a publisher for the task description topic
