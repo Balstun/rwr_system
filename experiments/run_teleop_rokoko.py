@@ -25,6 +25,9 @@ def check_subsystem_enabled(func: Callable):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if self.enabled:
+            if not self.calibrated:
+                self.get_logger().warn(f"{func.__name__} not performed because FRANKA subsystem is not calibrated. Please restart the node.", throttle_duration_sec=2.0)
+                return None
             return func(self, *args, **kwargs)
         else:
             self.get_logger().warn(f"{func.__name__} not performed because FRANKA subsystem is not enabled.", throttle_duration_sec=2.0)
@@ -37,6 +40,7 @@ class RokokoCoilDemo(Node):
         super().__init__("rokoko_coil_demo")
 
         self.enabled = False
+        self.calibrated = False
 
         self.X_bCP_G = None  # DrakeRigidTransform from coil pro to glove wrist
         self.X_bCP_G_init = (
@@ -52,6 +56,8 @@ class RokokoCoilDemo(Node):
         self.X_W_fEE_d = None
         self.X_W_fEE_init = None
         self.X_W_fEE = None
+
+        self.timer_ = self.create_timer(0.0001, self.set_calibration_flag)
 
         self.subsystem_poller = SubsystemPoller(self, "franka_enabled")
 
@@ -70,6 +76,10 @@ class RokokoCoilDemo(Node):
         self.arm_subscriber = self.create_subscription(
             PoseStamped, "/franka/end_effector_pose", self.arm_pose_callback, 10
         )
+
+    def set_calibration_flag(self):
+        if not self.enabled:
+            self.calibrated = False
 
     def arm_pose_callback(self, msg: PoseStamped):
         orientation = msg.pose.orientation
@@ -137,6 +147,7 @@ class RokokoCoilDemo(Node):
         )
         self.arm_publisher.publish(msg)
 
+
     def calibrate(self):
         input("Press enter to move the robot to init pose")
 
@@ -147,11 +158,13 @@ class RokokoCoilDemo(Node):
             time.sleep(0.2)
             self.X_W_fEE_init = deepcopy(self.X_W_fEE)
 
-
-        start_target = np.array(
-            [[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0.462, -0.23279, 0.302, 1]]
-        ).T
-        start_target = DrakeRigidTransform(start_target)
+        start_target_orientation = DrakeQuaternion(-0.71198, 0.14929, 0.15439, 0.66854)
+        start_target_position = [0.43887, -0.06797, 0.24523]
+        # start_target = np.array(
+        #     [[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0.4388, -0.0679, 0.2452, 1]]
+        # ).T
+        # start_target = DrakeRigidTransform(start_target)
+        start_target = DrakeRigidTransform(start_target_orientation, start_target_position,)
         self.publish_target_pose(start_target)
 
         input("Press enter to calibrate the robot")
@@ -180,6 +193,10 @@ class RokokoCoilDemo(Node):
 
         self.Xr_W_G_init_fEE_init = self.Xr_W_G_init.inverse() @ self.Xr_W_fEE_init
 
+        self.calibrated = True
+        for _ in range(3):
+            time.sleep(0.5)
+            print('\a')
         self.get_logger().info("Calibration complete")
 
     def publish_tf(self, frame_id, X: DrakeRigidTransform, parent_frame_id):
