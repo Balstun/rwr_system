@@ -15,11 +15,29 @@ from datetime import datetime
 TOPICS_TYPES = {
     "/franka/end_effector_pose": PoseStamped,
     "/franka/end_effector_pose_cmd": PoseStamped,
-    "/hand/policy_output": Float32MultiArray,
+
+    "/joint_to_motor_node/joint_positions": Float32MultiArray,
+
     "/oakd_front_view/color": Image,
     "/oakd_side_view/color": Image,
-    #"/oakd_wrist_view/color": Image,
+    "/oakd_front_view/depth": Image,
+    "/oakd_side_view/depth": Image,
+    "/oakd_wrist_view/color": Image,
+
     "/task_description": String,  # New topic for task description
+
+    
+    # CAMERA PARAMETERS
+    "/oakd_front_view/intrinsics": Float32MultiArray,
+    "/oakd_side_view/intrinsics": Float32MultiArray,
+    "/oakd_wrist_view/intrinsics": Float32MultiArray,
+    "/oakd_front_view/extrinsics": Float32MultiArray,
+    "/oakd_side_view/extrinsics": Float32MultiArray,
+    "/oakd_wrist_view/extrinsics": Float32MultiArray,
+    "/oakd_front_view/projection": Float32MultiArray,
+    "/oakd_side_view/projection": Float32MultiArray,
+    "/oakd_wrist_view/projection": Float32MultiArray,
+
     "/pink_sensor_filtered" : Float32,# pinky sensor filtered
     "/ring_sensor_filtered" : Float32, # ring sensor filtered
     "/middle_sensor_filtered" : Float32, # middle sensor filtered
@@ -149,10 +167,10 @@ class DemoLogger(Node):
 
     def stop_recording(self):
         if self.writer:
-            self.writer = None
             for sub in self.subscribers:
                 self.destroy_subscription(sub)
             self.get_logger().info("Stopped recording.")
+            self.writer = None
         else:
             self.get_logger().warn("No active recording to stop.")
 
@@ -171,20 +189,26 @@ def main(args=None):
 
     # Load topics to record (for demonstration, using hardcoded list)
     topics_to_record = ['/oakd_front_view/color', 
-                        '/oakd_side_view/color', 
-                        #'/oakd_wrist_view/color', 
-                        '/hand/policy_output', 
-                        '/franka/end_effector_pose', 
-                        '/franka/end_effector_pose_cmd'
-                        '/task_description', 
-                        '/pink_sensor_filtered',
-                        '/ring_sensor_filtered',
-                        '/middle_sensor_filtered',
-                        '/index_sensor_filtered',
-                        '/thumb_sensor_filtered',
-                        '/target_cube_mask',
-                        '/target_tray_mask', 
-                        '/segmentation_debug_img']
+                        '/oakd_front_view/depth', 
+                        '/oakd_side_view/color',
+                        '/oakd_side_view/depth', 
+                        # '/oakd_wrist_view/color'
+                        # '/joint_to_motor_node/joint_positions',
+
+                        # '/franka/end_effector_pose', 
+                        # '/franka/end_effector_pose_cmd',
+
+                        # '/task_description', 
+
+                        # '/pink_sensor_filtered',
+                        # '/ring_sensor_filtered',
+                        # '/middle_sensor_filtered',
+                        # '/index_sensor_filtered',
+                        # '/thumb_sensor_filtered',
+                        # '/target_cube_mask',
+                        # '/target_tray_mask', 
+                        # '/segmentation_debug_img',
+                        ]
 
     # Initialize ROS and create DemoLogger instance
     rclpy.init(args=args)
