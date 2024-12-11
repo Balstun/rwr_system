@@ -115,7 +115,7 @@ class DemoLogger(Node):
         self.publish_task_description(self.task_description)
 
         # Publish Segmentation from service as a topic (HACK)
-        self.publish_segmentation()
+        #self.publish_segmentation()
 
         # Wait for user to stop recording
         input("Press Enter to stop recording...")
