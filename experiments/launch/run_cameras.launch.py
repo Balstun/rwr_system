@@ -17,7 +17,7 @@ def generate_launch_description():
                 parameters=[
                     {"enable_front_camera": True},
                     {"enable_side_camera": True},
-                    {"enable_wrist_camera": False}
+                    {"enable_wrist_camera": True}
                 ],
             )
 
