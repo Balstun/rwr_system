@@ -12,6 +12,7 @@ from oakd_ingress import OakDDriver, OAK_CAMS_LIST
 from copy import deepcopy
 import time
 
+time.sleep(2)
 
 class OakDPublisher(Node):
     def __init__(self, camera_dict=None):
@@ -42,6 +43,7 @@ class OakDPublisher(Node):
     def init_cameras(self):
         self.get_logger().info("Initializing cameras")
         for camera_name, camera_id in self.camera_dict.items():
+            self.get_logger().info("Initializing camera {}".format(camera_name))
             self.camera_dict[camera_name] = {
                 "lock": RLock(),
                 "color": None,
@@ -133,7 +135,7 @@ def main():
     print("Starting oakd_publisher")
     oakd_publisher = OakDPublisher()
     import threading
-
+    time.sleep(2)
     spin_thread = threading.Thread(target=rclpy.spin, args=(oakd_publisher,))
     while rclpy.ok():
         oakd_publisher.publish_images()
