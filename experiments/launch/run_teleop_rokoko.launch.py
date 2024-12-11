@@ -46,7 +46,7 @@ def generate_launch_description():
                         "retarget/mano_adjustments": os.path.join(
                             get_package_share_directory("experiments"),
                             "cfgs",
-                            "retargeter_adjustment.yaml"
+                            "retargeter_adjustment_one_hand.yaml"
                         ),
                     },
                     {"retarget/hand_scheme": "biomimic"},

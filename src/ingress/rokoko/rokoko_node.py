@@ -15,7 +15,7 @@ class RokokoNode(Node):
         super().__init__("rokoko_node")
 
         self.subsystem_poller = SubsystemPoller(self, "rokoko_enabled")
-        self.enabled = False
+        self.enabled = True
 
         # start tracker
         self.declare_parameter("rokoko_tracker/ip", "0.0.0.0")

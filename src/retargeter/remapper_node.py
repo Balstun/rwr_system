@@ -25,7 +25,7 @@ class RemapperNode(Node):
         super().__init__('remapper_node')
         
         self.subsystem_poller = SubsystemPoller(self, "retargeter_enabled")
-        self.enabled = False
+        self.enabled = True
 
         self._joint_positions_pub = self.create_publisher(
             Float32MultiArray,

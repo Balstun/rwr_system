@@ -323,12 +323,30 @@ class Retargeter:
         start_vectors_untuned = []
         end_vectors_untuned = []
 
-        bodies_of_interest = ["thumb_base", "thumb_pp", "thumb_mp", "thumb_tip", "thumb_pp_virt", "thumb_mp_virt", "thumb_tip_virt"]
+        bodies_of_interest = ["thumb_base", "thumb_pp", "thumb_mp", "thumb_pp_virt", "thumb_mp_virt", "thumb_dp_virt", "thumb_dp", "thumb_fingertip"]
+        offset_thumb_bodies = ["thumb_mp_virt", "thumb_mp", "thumb_dp_virt", "thumb_dp", "thumb_fingertip"]
+
 
         for step in range(opt_steps):
             chain_transforms = self.chain.forward_kinematics(
                 self.joint_map @ (self.gc_joints / (180 / np.pi)) # Guess of tendon lengths and we compute the joint angles. NOT ACTUATOR ANGLES. 
             )
+
+            # Rotate the thumb bodies to account for the model offset (about the thumb_base/thumb_pp)
+            for body_name in offset_thumb_bodies:
+
+                body = chain_transforms[body_name]
+                body_transformed = body.transform_points(self.root)
+                print("Before rotation", body, body_transformed)
+                print(type(body), type(body_transformed))
+
+                chain_transforms[body_name] = self.rotate_body(chain_transforms[body_name], body_name, [0, 0, -0.15])
+                body = chain-transforms[body_name]
+                body_transformed = body.transform_points(self.root)
+                print("After rotation", body, body_transformed)
+                print(type(body), type(body_transformed))
+
+
             mujoco_fingertips = {}
             for finger, finger_tip in self.finger_to_tip.items():
                 mujoco_fingertips[finger] = chain_transforms[finger_tip].transform_points(
@@ -412,7 +430,25 @@ class Retargeter:
 
         return finger_joint_angles, debug_dict
 
-    
+    def rotate_body(self, body, body_name, rotation_angles):
+        """
+        Rotate the given body by the given rotation angles (about the thumb_base)
+        """
+        rot = Rotation.from_euler("xyz", rotation_angles, degrees=False)
+        R_matrix = rot.as_matrix()
+        R_matrix_tensor = torch.tensor(R_matrix, dtype=torch.float32)
+        print("Types of body and rotation matrix", type(body), type(R_matrix_tensor))
+
+        body_rot = body.rot
+        print("Body rot type:", type(body_rot))
+        body_rot_matrix = body_rot.as_matrix()
+
+        rotated_body = torch.matmul(body_rot_matrix, R_matrix_tensor.T)
+        print("Body and rotated body", body, rotated_body)
+        print("Rotated body type:", type(rotated_body))
+        return rotated_body
+
+
     def adjust_mano_fingers(self, joints):
         # Initialize mano_adjustments dictionary
         mano_adjustments = self.mano_adjustments
