@@ -4,7 +4,7 @@ from typing import Tuple
 import rclpy
 from rclpy.node import Node
 import rosbag2_py
-from std_msgs.msg import Float32MultiArray, String, Float32
+from std_msgs.msg import Float32MultiArray, String, Float32,Bool
 from custom_interfaces.srv import GetSegmentationMask
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import Image
@@ -40,14 +40,14 @@ TOPICS_TYPES = {
     "/oakd_side_view/projection": Float32MultiArray,
     "/oakd_wrist_view/projection": Float32MultiArray,
 
-    "/pink_sensor_filtered" : Float32,# pinky sensor filtered
+    "/pinky_sensor_filtered" : Float32,# pinky sensor filtered
     "/ring_sensor_filtered" : Float32, # ring sensor filtered
     "/middle_sensor_filtered" : Float32, # middle sensor filtered
     "/index_sensor_filtered" : Float32, # index sensor filtered
     "/thumb_sensor_filtered" : Float32, # thumb sensor filtered,
     "/target_cube_mask" : Image, # mask of target cube in oakd side view camera
     "/target_tray_mask" : Image, # mask of traget tray in oakd side view camera
-    "/segmentation_debug_img" : Image # oakd side view camera frame with annotated segmentation contours and class labels   
+    "/segmentation_debug_img" : Image, # oakd side view camera frame with annotated segmentation contours and class labels   
 }
 
 class DemoLogger(Node):
@@ -88,7 +88,6 @@ class DemoLogger(Node):
             return resp.debug_img, resp.cube_mask, resp.tray_mask
         raise Exception("Error in calling segmentation service")
         
-
     def run_logger(self):
         # Get task name (subfolder within the base path)
         if self.task_name is None:
@@ -222,22 +221,20 @@ def main(args=None):
 
     # Load topics to record (for demonstration, using hardcoded list)
     topics_to_record = ['/oakd_front_view/color', 
-                        '/oakd_front_view/depth', 
                         '/oakd_side_view/color',
-                        '/oakd_side_view/depth', 
-                        # '/oakd_wrist_view/color'
-                        # '/joint_to_motor_node/joint_positions',
+                         '/oakd_wrist_view/color',
+                         '/joint_to_motor_node/joint_positions',
 
-                        # '/franka/end_effector_pose', 
-                        # '/franka/end_effector_pose_cmd',
+                         '/franka/end_effector_pose', 
+                         '/franka/end_effector_pose_cmd',
 
-                        # '/task_description', 
+                         '/task_description', 
 
-                        # '/pink_sensor_filtered',
-                        # '/ring_sensor_filtered',
-                        # '/middle_sensor_filtered',
-                        # '/index_sensor_filtered',
-                        # '/thumb_sensor_filtered',
+                         '/pinky_sensor_filtered',
+                         '/ring_sensor_filtered',
+                         '/middle_sensor_filtered',
+                         '/index_sensor_filtered',
+                         '/thumb_sensor_filtered',
                         # '/target_cube_mask',
                         # '/target_tray_mask', 
                         # '/segmentation_debug_img',
