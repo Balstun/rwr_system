@@ -12,6 +12,7 @@ from bag2h5_converter import convert_to_h5
 from rclpy.serialization import serialize_message
 from pathlib import Path
 from datetime import datetime
+import pygame
 
 # Define supported topics and message types
 TOPICS_TYPES = {
@@ -54,6 +55,9 @@ class DemoLogger(Node):
     def __init__(self, topics_to_record, base_path):
         super().__init__('demo_logger')
         print("DemoLogger.__init__")
+
+        pygame.mixer.init()
+        pygame.mixer.music.load('star_theme.mp3')
         
         self.base_path = Path(base_path)
         self.task_name = None
@@ -110,6 +114,8 @@ class DemoLogger(Node):
         task_folder_bag = task_folder / "rosbag2"
         self.start_recording(task_folder_bag)
 
+        pygame.mixer.music.play()
+
         # Publish task description as a String message
         self.publish_task_description(self.task_description)
 
@@ -118,6 +124,7 @@ class DemoLogger(Node):
 
         # Wait for user to stop recording
         input("Press Enter to stop recording...")
+        pygame.mixer.music.stop()
         self.stop_recording()
 
         # Ask to save or discard
