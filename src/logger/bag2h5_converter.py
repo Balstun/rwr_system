@@ -4,7 +4,7 @@ import h5py
 from pathlib import Path
 import rosbag2_py
 from rclpy.serialization import deserialize_message
-from std_msgs.msg import Float32MultiArray,Float32,Bool
+from std_msgs.msg import Float32MultiArray,Float32,Bool,String
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge  
@@ -41,6 +41,7 @@ def convert_to_h5(input_bag_path: str, output_h5_path: str):
                 Image if msg_type_str == 'Image' 
                 else PoseStamped if msg_type_str == 'PoseStamped' 
                 else Float32MultiArray if msg_type_str == 'Float32MultiArray' 
+                else String if msg_type_str == 'String'
                 else Float32 if msg_type_str == "Float32"
                 else None
             )
@@ -72,9 +73,13 @@ def convert_to_h5(input_bag_path: str, output_h5_path: str):
 
             elif isinstance(msg, Image):
                 # For Image, save the raw image data array
-                msg_shape = (msg.height, msg.width, msg.step)
-                cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
-                h5_file[topic_name].create_dataset(f"{timestamp}", data=cv_image)
+                #msg_shape = (msg.height, msg.width, msg.step)
+                if topic_name in  {"/target_tray_mask","/target_cube_mask"}:
+                    cv_image = bridge.imgmsg_to_cv2(msg)
+                    h5_file[topic_name].create_dataset(f"{timestamp}", data=cv_image)
+                else:
+                    cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
+                    h5_file[topic_name].create_dataset(f"{timestamp}", data=cv_image)
             elif isinstance(msg, Float32):
                 # For Float32, save the raw sensor value        
                 h5_file[topic_name].create_dataset(f"{timestamp}", data=msg.data)

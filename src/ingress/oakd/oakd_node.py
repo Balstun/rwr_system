@@ -95,7 +95,7 @@ class OakDPublisher(Node):
                     output_img_rgb = self.bridge.cv2_to_imgmsg(
                         color, "bgr8", header=header
                     )
-                    self.get_logger().info("Publishing image")
+                    #self.get_logger().info("Publishing image")
                     self.camera_dict[camera_name]["rgb_output_pub"].publish(
                         output_img_rgb
                     )

@@ -23,8 +23,6 @@ TOPICS_TYPES = {
 
     "/oakd_front_view/color": Image,
     "/oakd_side_view/color": Image,
-    "/oakd_front_view/depth": Image,
-    "/oakd_side_view/depth": Image,
     "/oakd_wrist_view/color": Image,
 
     "/task_description": String,  # New topic for task description
@@ -90,7 +88,9 @@ class DemoLogger(Node):
 
         if resp.success:
             return resp.debug_img, resp.cube_mask, resp.tray_mask
-        raise Exception("Error in calling segmentation service")
+        else:
+            return None,None,None
+        #raise Exception("Error in calling segmentation service")
         
     def run_logger(self):
         # Get task name (subfolder within the base path)
@@ -120,7 +120,10 @@ class DemoLogger(Node):
         self.publish_task_description(self.task_description)
 
         # Publish Segmentation from service as a topic (HACK)
-        #self.publish_segmentation()
+        #self._logger.info("Calling segmentation service")
+        #segmentation_success = self.publish_segmentation()
+        #if not segmentation_success: self.stop_recording()
+        # self._logger.info("Finished segmentation service call")
 
         # Wait for user to stop recording
         input("Press Enter to stop recording...")
@@ -145,6 +148,9 @@ class DemoLogger(Node):
     def publish_segmentation(self):
         debug_mask, cube_mask, tray_mask = self.get_segmentation_masks()
 
+        if debug_mask is None or cube_mask is None or tray_mask is None:
+            return False
+
         cube_pub = self.create_publisher(Image, self.cube_mask_const_topic, 10)
         tray_pub = self.create_publisher(Image, self.tray_mask_const_topic, 10)
         debug_pub = self.create_publisher(Image, self.debug_mask_const_topic, 10)
@@ -152,6 +158,8 @@ class DemoLogger(Node):
         cube_pub.publish(cube_mask)
         tray_pub.publish(tray_mask)
         debug_pub.publish(debug_mask)
+        self.get_logger().info("Published seg imgs.")
+        return True
 
     def publish_task_description(self, description):
         # Create a publisher for the task description topic
@@ -235,15 +243,15 @@ def main(args=None):
                          '/franka/end_effector_pose', 
                          '/franka/end_effector_pose_cmd',
 
-                         '/task_description', 
+                         #'/task_description', 
 
                          '/pinky_sensor_filtered',
                          '/ring_sensor_filtered',
                          '/middle_sensor_filtered',
                          '/index_sensor_filtered',
                          '/thumb_sensor_filtered',
-                        # '/target_cube_mask',
-                        # '/target_tray_mask', 
+                         '/target_cube_mask',
+                         '/target_tray_mask', 
                         # '/segmentation_debug_img',
                         ]
 

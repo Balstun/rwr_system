@@ -79,7 +79,7 @@ class RokokoCoilDemo(Node):
 
     def set_calibration_flag(self):
         if not self.enabled:
-            self.calibrated = False
+            self.calibrated = True
 
     def arm_pose_callback(self, msg: PoseStamped):
         orientation = msg.pose.orientation
@@ -131,7 +131,7 @@ class RokokoCoilDemo(Node):
 
         return X_W_fEE_d
 
-    @check_subsystem_enabled
+    # @check_subsystem_enabled
     def publish_target_pose(self, X_W_fEE_d: DrakeRigidTransform):
         msg = PoseStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -158,8 +158,8 @@ class RokokoCoilDemo(Node):
             time.sleep(0.2)
             self.X_W_fEE_init = deepcopy(self.X_W_fEE)
 
-        start_target_orientation = DrakeQuaternion(-0.71198, 0.14929, 0.15439, 0.66854)
-        start_target_position = [0.43887, -0.06797, 0.24523]
+        start_target_orientation = DrakeQuaternion(0.9123890032495732, 0.0068343934713917575, 0.0034454251504201405, -0.409252644292815)
+        start_target_position = [0.33303902877539454, -0.5352327819313111, 0.460122887480905]
         # start_target = np.array(
         #     [[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0.4388, -0.0679, 0.2452, 1]]
         # ).T
