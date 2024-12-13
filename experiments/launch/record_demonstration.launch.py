@@ -52,14 +52,20 @@ def generate_launch_description():
                 output="log",
                 parameters=[
                     {
-                        "retarget/mjcf_filepath": os.path.join(
+                        "retarget/urdf_filepath": os.path.join(
                             get_package_share_directory("viz"),
                             "models",
                             "faive_hand_p4",
-                            "hand_p4.xml",
+                            "urdf",
+                            "p4.urdf",
+                        ),
+                        "retarget/hand_scheme": os.path.join(
+                            get_package_share_directory("viz"),
+                            "models",
+                            "faive_hand_p4",
+                            "scheme_p4.yaml",
                         )
                     },
-                    {"retarget/hand_scheme": "p4"},
                 ],
             ),
             

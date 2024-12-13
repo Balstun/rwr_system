@@ -184,6 +184,11 @@ class DemoLogger(Node):
             ))
 
             # Subscribe and add callback to write messages
+            from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+            qos_profile = QoSProfile(depth=10)
+            qos_profile.durability = DurabilityPolicy.TRANSIENT_LOCAL
+            
+
             self.subscribers.append(
                 self.create_subscription(
                     topic_type,
@@ -191,7 +196,7 @@ class DemoLogger(Node):
                     lambda msg, topic_name=topic_name: self.writer.write(
                         topic_name, serialize_message(msg), self.get_clock().now().nanoseconds
                     ),
-                    10
+                    qos_profile if "intrinsics" in topic_name or "extrinsics" in topic_name or "projection"in topic_name  else 10,
                 )
             )
 
@@ -214,6 +219,7 @@ class DemoLogger(Node):
         # delete the folder
         task_folder_bag.rmdir()
         self.get_logger().info(f"Recording deleted from folder: {task_folder_bag}")
+
 
 def main(args=None):
     # Define the base path for recordings
