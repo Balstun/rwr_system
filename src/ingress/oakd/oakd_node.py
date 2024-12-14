@@ -5,16 +5,12 @@ from rclpy.node import Node
 import numpy as np
 import cv2
 from sensor_msgs.msg import Image, CameraInfo
-from std_msgs.msg import Float32MultiArray
-from rclpy.qos import QoSProfile, DurabilityPolicy
-
 from std_msgs.msg import Header
 from cv_bridge import CvBridge, CvBridgeError
 from threading import RLock
-from faive_system.src.ingress.oakd.oakd_ingress import OakDDriver, OAK_CAMS_LIST
+from oakd_ingress import OakDDriver, OAK_CAMS_LIST
 from copy import deepcopy
 import time
-from faive_system.src.common.utils import numpy_to_float32_multiarray
 
 time.sleep(2)
 
@@ -41,15 +37,11 @@ class OakDPublisher(Node):
         self.camera_dict = camera_dict
         self.get_logger().info("Camera dict: "+str(camera_dict))
         self.visualize = self.get_parameter("visualize").value
-        self.calibrated = False
 
         self.init_cameras()
 
     def init_cameras(self):
         self.get_logger().info("Initializing cameras")
-        # qos_profile = QoSProfile(depth=10)
-        # qos_profile.durability = DurabilityPolicy.TRANSIENT_LOCAL
-
         for camera_name, camera_id in self.camera_dict.items():
             self.get_logger().info("Initializing camera {}".format(camera_name))
             self.camera_dict[camera_name] = {
@@ -68,16 +60,9 @@ class OakDPublisher(Node):
                 "depth_output_pub": self.create_publisher(
                     Image, f"/oakd_{camera_name}/depth", 100
                 ),
-                "intrinsics_pub": self.create_publisher(
-                    Float32MultiArray, f"/oakd_{camera_name}/intrinsics", qos_profile
+                "camera_info_pub": self.create_publisher(
+                    CameraInfo, f"/oakd_{camera_name}/camera_info", 100
                 ),
-                "extrinsics_pub": self.create_publisher(
-                    Float32MultiArray, f"/oakd_{camera_name}/extrinsics", qos_profile
-                ),
-                "projection_pub": self.create_publisher(
-                    Float32MultiArray, f"/oakd_{camera_name}/projection", qos_profile
-                ),
-                "calibrated" : False
             }
 
     def recv_oakd_images(self, color, depth, camera_name):
@@ -110,46 +95,40 @@ class OakDPublisher(Node):
                     output_img_rgb = self.bridge.cv2_to_imgmsg(
                         color, "bgr8", header=header
                     )
-                    self.get_logger().info("Publishing image")
+                    #self.get_logger().info("Publishing image")
                     self.camera_dict[camera_name]["rgb_output_pub"].publish(
                         output_img_rgb
                     )
-                    # print(f"Published image for {camera_name}")
+                    print(f"Published image for {camera_name}")
                 except CvBridgeError as e:
                     self.get_logger().error(f"Error publishing color image: {e}")
 
                 # publish camera info
                 try:
-                    projection_matrix = np.array(self.camera_dict[camera_name]["driver"].projection_matrix)
-                    print(f"Projection matrix for {camera_name}: {projection_matrix}")
-                    # flatten the matrix
-                    projection_matrix_msg = Float32MultiArray()
-                    projection_matrix_msg.data = projection_matrix.flatten().tolist()
-                    self.camera_dict[camera_name]["projection_pub"].publish(
-                        projection_matrix_msg
+                    camera_info = CameraInfo()
+                    camera_info.header.stamp = self.get_clock().now().to_msg()
+                    camera_info.header.frame_id = "world"
+                    camera_info.width = color.shape[1]
+                    camera_info.height = color.shape[0]
+                    camera_info.distortion_model = "plumb_bob"
+                    camera_info.d = (
+                        self.camera_dict[camera_name]["driver"]
+                        .distortion_coeff.flatten()
+                        .tolist()
+                    )
+                    intrinsics = (
+                        np.asarray(self.camera_dict[camera_name]["driver"].intrinsics)
+                        .flatten()
+                        .tolist()
+                    )
+                    camera_info.k = intrinsics
+                    self.camera_dict[camera_name]["camera_info_pub"].publish(
+                        camera_info
                     )
 
-                    intrinsic_matrix = np.array(self.camera_dict[camera_name]["driver"].intrinsics)
-                    print(f"intrinsic_matrix for {camera_name}: {intrinsic_matrix}")
-                    intrinsic_matrix_msg = Float32MultiArray()
-                    intrinsic_matrix_msg.data = intrinsic_matrix.flatten().tolist()
-                    self.camera_dict[camera_name]["intrinsics_pub"].publish(
-                        intrinsic_matrix_msg
-                    )
-                    
-                    extrinsic_matrix = np.array(self.camera_dict[camera_name]["driver"].extrinsics)
-                    print(f"Extrinsic matrix for {camera_name}: {extrinsic_matrix}")
-                    extrinsic_matrix_msg = Float32MultiArray()
-                    extrinsic_matrix_msg.data = extrinsic_matrix.flatten().tolist() 
-                    self.camera_dict[camera_name]["extrinsics_pub"].publish(
-                        extrinsic_matrix_msg
-                    )
-                    
-                    self.camera_dict[camera_name]["calibrated"] = True
-                    
                 except Exception as e:
-                    self.get_logger().error(f"Error publishing camera infos: {e}")
-                    
+                    self.get_logger().error(f"Error publishing camera info: {e}")
+
 
 def main():
     rclpy.init()

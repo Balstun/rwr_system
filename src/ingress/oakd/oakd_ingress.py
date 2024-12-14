@@ -190,13 +190,13 @@ class OakDDriver:
             print("Starting pipeline...")
             attempts = 1000
             has_depth = False
-            for _ in range(attempts):
-                print("Trying to get depth stream")
-                if device.getOutputQueue("depth", maxSize=1, blocking=False).tryGet() is not None:
-                    has_depth = True
-                    print("OAK-D detected")
-                    break
-                time.sleep(0.1)
+            # for _ in range(attempts):
+            #     print("Trying to get depth stream")
+            #     if device.getOutputQueue("depth", maxSize=1, blocking=False).tryGet() is not None:
+            #         has_depth = True
+            #         print("OAK-D detected")
+            #         break
+            #     time.sleep(0.1)
 
                 
             device.setIrLaserDotProjectorBrightness(1200)

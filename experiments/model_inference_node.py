@@ -48,6 +48,12 @@ class PolicyPlayerAgent(Node):
         self.camera_names = self.get_parameter("camera_names").value
         self.policy_ckpt_path = self.get_parameter("policy_ckpt_path").value
         self.hand_qpos_dim = self.get_parameter("hand_qpos_dim").value
+
+        self.thumb_data = None
+        self.index_data = None
+        self.middle_data = None
+        self.ring_data = None
+        self.pinky_data = None
         
         self.lock = Lock()
 
@@ -66,23 +72,23 @@ class PolicyPlayerAgent(Node):
         )
 
         self.sensor_thumb = self.create_subscription(
-            Float32MultiArray, "/thumb_sensor_filtered", self.thumb_cb, 10
+            Float32, "/thumb_sensor_filtered", self.thumb_cb, 10
         )
 
         self.sensor_index = self.create_subscription(
-            Float32MultiArray, "/index_sensor_filtered", self.index_cb, 10
+            Float32, "/index_sensor_filtered", self.index_cb, 10
         )
 
         self.sensor_middle = self.create_subscription(
-            Float32MultiArray, "/middle_sensor_filtered", self.middle_cb, 10
+            Float32, "/middle_sensor_filtered", self.middle_cb, 10
         )
 
         self.sensor_ring = self.create_subscription(
-            Float32MultiArray, "/ring_sensor_filtered", self.ring_cb, 10
+            Float32, "/ring_sensor_filtered", self.ring_cb, 10
         )
 
         self.sensor_pinky = self.create_subscription(
-            Float32MultiArray, "/pinky_sensor_filtered", self.pinky_cb, 10
+            Float32, "/pinky_sensor_filtered", self.pinky_cb, 10
         )
 
         self.camera_listeners = [
@@ -186,19 +192,19 @@ class PolicyPlayerAgent(Node):
         self.publish(wrist_action, hand_action)
 
     def thumb_cb(self, msg: Float32):
-        self.thumb_data = msg.data
+        self.thumb_data = np.array([msg.data])
 
     def index_cb(self, msg: Float32):
-        self.index_data = msg.data
+        self.index_data = np.array([msg.data])
 
     def middle_cb(self, msg: Float32):
-        self.middle_data = msg.data
+        self.middle_data = np.array([msg.data])
 
     def ring_cb(self, msg: Float32):
-        self.ring_data = msg.data
+        self.ring_data = np.array([msg.data])
 
     def pinky_cb(self, msg: Float32):
-        self.pinky_data = msg.data
+        self.pinky_data = np.array([msg.data])
 
 
 def main(args=None):
