@@ -4,7 +4,7 @@ from time import sleep
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32MultiArray, MultiArrayDimension
+from std_msgs.msg import Float32, Float32MultiArray, MultiArrayDimension
 from geometry_msgs.msg import TransformStamped, PoseStamped
 from sensor_msgs.msg import Image
 from scipy.spatial.transform import Rotation as R
@@ -63,6 +63,26 @@ class PolicyPlayerAgent(Node):
         )
         self.arm_subscriber = self.create_subscription(
             PoseStamped, "/franka/end_effector_pose", self.arm_pose_callback, 10
+        )
+
+        self.sensor_thumb = self.create_subscription(
+            Float32MultiArray, "/thumb_sensor_filtered", self.thumb_cb, 10
+        )
+
+        self.sensor_index = self.create_subscription(
+            Float32MultiArray, "/index_sensor_filtered", self.index_cb, 10
+        )
+
+        self.sensor_middle = self.create_subscription(
+            Float32MultiArray, "/middle_sensor_filtered", self.middle_cb, 10
+        )
+
+        self.sensor_ring = self.create_subscription(
+            Float32MultiArray, "/ring_sensor_filtered", self.ring_cb, 10
+        )
+
+        self.sensor_pinky = self.create_subscription(
+            Float32MultiArray, "/pinky_sensor_filtered", self.pinky_cb, 10
         )
 
         self.camera_listeners = [
@@ -131,11 +151,24 @@ class PolicyPlayerAgent(Node):
             print("missing qpos_franka", qpos_franka is None)
             print("missing qpos_hand", qpos_hand is None)
             return False, obs_dict
-        
-        
+
+        thumb_data = self.thumb_data
+        index_data = self.index_data
+        middle_data = self.middle_data
+        ring_data = self.ring_data
+        pinky_data = self.pinky_data
+
+        sensor_obs = {"thumb_sensor": thumb_data, "index_sensor": index_data, "middle_sensor": middle_data, "ring_sensor": ring_data, "pinky_sensor": pinky_data}
+
+        for o in sensor_obs.values():
+            if o is None:
+                print("Missing sensor data")
+                return False, obs_dict
+
         obs_dict.update(images)
         obs_dict['qpos_franka'] = qpos_franka
         obs_dict['qpos_hand'] = qpos_hand
+        obs_dict.update(sensor_obs)
         return get_data_success, obs_dict
     
     def run_policy_cb(self):
@@ -151,6 +184,22 @@ class PolicyPlayerAgent(Node):
             wrist_action = actions["actions_franka"][0].cpu().numpy()
             hand_action = actions["actions_hand"][0].cpu().numpy()
         self.publish(wrist_action, hand_action)
+
+    def thumb_cb(self, msg: Float32):
+        self.thumb_data = msg.data
+
+    def index_cb(self, msg: Float32):
+        self.index_data = msg.data
+
+    def middle_cb(self, msg: Float32):
+        self.middle_data = msg.data
+
+    def ring_cb(self, msg: Float32):
+        self.ring_data = msg.data
+
+    def pinky_cb(self, msg: Float32):
+        self.pinky_data = msg.data
+
 
 def main(args=None):
     rclpy.init(args=args)
