@@ -108,6 +108,15 @@ class PolicyPlayerAgent(Node):
         hand_msg = numpy_to_float32_multiarray(np.zeros(self.hand_qpos_dim))
         self.hand_pub.publish(hand_msg)
 
+        input("Press enter to move the robot to the initial pose")
+        
+        franka_init_pose = PoseStamped()
+        franka_init_pose.pose.position = [0.33303902877539454, -0.5352327819313111, 0.460122887480905]
+        franka_init_pose.pose.orientation = [0.9123890032495732, 0.0068343934713917575, 0.0034454251504201405, -0.409252644292815]
+        franka_init_pose.header.stamp = self.get_clock().now().to_msg()
+        franka_init_pose.header.frame_id = "panda_link0"
+        self.arm_publisher.publish(franka_init_pose)
+
 
     def publish(self, wrist_policy: np.ndarray, hand_policy: np.ndarray):
         # publish hand policy
