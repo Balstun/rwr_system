@@ -38,7 +38,7 @@ class RemapperNode(Node):
         self.remapped_joint_angles = np.zeros(self.num_joints - 1)
         self.wrist_cmd = 0.0
         
-        self.timer_ = self.create_timer(0.01, self.pub_joint_angles)
+        self.timer_ = self.create_timer(0.05, self.pub_joint_angles)
 
         self._mano_keypoints_sub = self.create_subscription(
             Float32MultiArray,

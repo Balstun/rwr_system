@@ -158,12 +158,14 @@ class RokokoCoilDemo(Node):
             time.sleep(0.2)
             self.X_W_fEE_init = deepcopy(self.X_W_fEE)
 
-        start_target_orientation = DrakeQuaternion(0.9123890032495732, 0.0068343934713917575, 0.0034454251504201405, -0.409252644292815)
-        start_target_position = [0.33303902877539454, -0.5352327819313111, 0.460122887480905]
+        #start_target_orientation = DrakeQuaternion(0.9123890032495732, 0.0068343934713917575, 0.0034454251504201405, -0.409252644292815)
+        #start_target_position = [0.33303902877539454, -0.5352327819313111, 0.460122887480905]
         # start_target = np.array(
         #     [[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0.4388, -0.0679, 0.2452, 1]]
         # ).T
         # start_target = DrakeRigidTransform(start_target)
+        start_target_orientation = DrakeQuaternion(0.61369702816, -0.6760767254346, -0.29546740127, -0.28106090752)
+        start_target_position = [0.3557322089, -0.-0.53990497814, 0.2429908817]
         start_target = DrakeRigidTransform(start_target_orientation, start_target_position,)
         self.publish_target_pose(start_target)
 

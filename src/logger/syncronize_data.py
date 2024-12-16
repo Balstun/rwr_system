@@ -72,7 +72,7 @@ def sample_and_sync_h5(input_h5_path, output_h5_path, sampling_frequency, compre
 
             if topic == "/task_description":
                 if TOPIC_TO_STRING[topic_type] == "String":
-                    string_data = topic_group["description"]
+                    string_data = topic_group["/task_description"]
                     output_h5.create_dataset("task_description", data=string_data)
                 continue
 

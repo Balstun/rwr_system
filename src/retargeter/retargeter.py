@@ -261,7 +261,7 @@ class Retargeter:
         17-20: pinky
         """
 
-        print(f"Retargeting: Warm: {warm} Opt steps: {opt_steps}")
+        #print(f"Retargeting: Warm: {warm} Opt steps: {opt_steps}")
 
         start_time = time.time()
         if not warm:
@@ -402,7 +402,7 @@ class Retargeter:
             debug_dict["keyvec_mujoco"]["start"] = start_vectors_untuned
             debug_dict["keyvec_mujoco"]["end"] = end_vectors_untuned
 
-        print(f"Retarget time: {(time.time() - start_time) * 1000} ms")
+        #print(f"Retarget time: {(time.time() - start_time) * 1000} ms")
 
         return finger_joint_angles, debug_dict
 

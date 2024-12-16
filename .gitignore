@@ -5,3 +5,6 @@ __pycache__/
 /Pipfile
 /install
 /log
+
+/recordings/
+/src/logger/recordings/
