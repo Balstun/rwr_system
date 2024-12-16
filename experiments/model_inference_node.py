@@ -20,6 +20,8 @@ import yaml
 from faive_system.src.common.utils import numpy_to_float32_multiarray, float32_multiarray_to_numpy
 from srl_il.export.il_policy import get_policy_from_ckpt
 
+USE_SMALL_CUBE_POLICY = True
+
 class CameraListener(Node):
     def __init__(self, camera_topic, name, node):
         self.camera_topic = camera_topic
@@ -46,10 +48,13 @@ class PolicyPlayerAgent(Node):
         self.declare_parameter("camera_names", rclpy.Parameter.Type.STRING_ARRAY)
         self.declare_parameter("policy_ckpt_path", "")   # assume the policy ckpt is saved with its config
         self.declare_parameter("no_segmentation_policy_ckpt_path", "")   # assume the policy ckpt is saved with its config
+        self.declare_parameter("small_cube_policy_ckpt_path", "")   # assume the policy ckpt is saved with its config
         self.declare_parameter("hand_qpos_dim", 16) # The dimension of the hand_qpos, we need this because we need to broadcast an all zero command to the hand at the beginning
         self.camera_topics = self.get_parameter("camera_topics").value
         self.camera_names = self.get_parameter("camera_names").value
         self.policy_ckpt_path = self.get_parameter("policy_ckpt_path").value
+        self.no_segmentation_policy_ckpt_path = self.get_parameter("no_segmentation_policy_ckpt_path").value
+        self.small_cube_policy_ckpt_path = self.get_parameter("small_cube_policy_ckpt_path").value
         self.hand_qpos_dim = self.get_parameter("hand_qpos_dim").value
 
         self.thumb_data = None
@@ -123,10 +128,13 @@ class PolicyPlayerAgent(Node):
         self.current_wrist_state = None
         self.current_hand_state = None
 
-        if self.use_segmentation_policy:
-            self.policy = get_policy_from_ckpt(self.policy_ckpt_path)
+        if not USE_SMALL_CUBE_POLICY:
+            if self.use_segmentation_policy:
+                self.policy = get_policy_from_ckpt(self.policy_ckpt_path)
+            else:
+                self.policy = get_policy_from_ckpt(self.no_segmentation_policy_ckpt_path)
         else:
-            self.policy = get_policy_from_ckpt(self.no_segmentation_policy_ckpt_path)
+                self.policy = get_policy_from_ckpt(self.small_cube_policy_ckpt_path)
         self.policy.reset_policy()
         self.policy_run = self.create_timer(0.05, self.run_policy_cb) # 20hz
 
@@ -145,6 +153,15 @@ class PolicyPlayerAgent(Node):
 
 
     def get_segmentation_masks(self) -> Tuple[Image, Image, Image]:
+        input("Press enter to move the robot to the pre-segmentation initial pose")
+        
+        franka_init_pose = PoseStamped()
+        franka_init_pose.pose.position = [0.33303902877539454, -0.5352327819313111, 0.460122887480905]
+        franka_init_pose.pose.orientation = [0.9123890032495732, 0.0068343934713917575, 0.0034454251504201405, -0.409252644292815]
+        franka_init_pose.header.stamp = self.get_clock().now().to_msg()
+        franka_init_pose.header.frame_id = "panda_link0"
+        self.arm_publisher.publish(franka_init_pose)
+
         client = self.create_client(GetSegmentationMask, "/segment_svc")
         while not client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting...')

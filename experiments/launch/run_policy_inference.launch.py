@@ -17,9 +17,15 @@ def generate_launch_description():
         default_value='',
         description='The no segmentation ckpt path of the model to load. There should be `config.yaml` in its directory or parent directory'
     )
+    small_cubes_policy_ckpt_arg = DeclareLaunchArgument(
+        'small_cubes_policy_ckpt_path',
+        default_value='',
+        description='The small cubes segmentation ckpt path of the model to load. There should be `config.yaml` in its directory or parent directory'
+    )
     # Use LaunchConfiguration to capture the values passed via command line
     policy_ckpt_path = LaunchConfiguration('policy_ckpt_path')
     no_segmentation_policy_ckpt_path = LaunchConfiguration('no_segmentation_policy_ckpt_path')
+    small_cubes_policy_ckpt_path = LaunchConfiguration('small_cubes_policy_ckpt_path')
 
     # Define the node with parameters from the launch arguments
     policy_node = Node(
@@ -35,7 +41,8 @@ def generate_launch_description():
                 "oakd_front_view_images", "oakd_side_view_images", "oakd_wrist_view_images"
             ],
             "policy_ckpt_path": policy_ckpt_path,
-            "no_segmentation_policy_ckpt_path": no_segmentation_policy_ckpt_path
+            "no_segmentation_policy_ckpt_path": no_segmentation_policy_ckpt_path,
+            "small_cubes_policy_ckpt_path": small_cubes_policy_ckpt_path
          }]
     )
 
@@ -43,5 +50,6 @@ def generate_launch_description():
     return LaunchDescription([
         policy_ckpt_arg,
         no_segmentation_policy_ckpt_arg,
+        small_cubes_policy_ckpt_arg,
         policy_node
 ])
