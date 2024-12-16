@@ -10,7 +10,7 @@ from geometry_msgs.msg import Point, TransformStamped, Vector3, Quaternion, Pose
 from tf2_ros import TransformBroadcaster
 from std_msgs.msg import Float32MultiArray
 
-STATIC_OFFSET = TODO # Meters?
+STATIC_OFFSET = -0.03 # Meters?
 JOINT_SUM_THRESHOLD = 7.5 # half of possible total joint angle data
 RELEASE_DELAY_THRESHOLD = 100 # 20 Hz * 5 seconds
 
@@ -48,6 +48,8 @@ class ValidateInference(Node):
 
     def joint_positions_callback(self, msg: Float32MultiArray):
         joint_sum = sum(msg.data)
+
+        self.get_logger().info(self.hand_grasping)
 
         if joint_sum > JOINT_SUM_THRESHOLD:
             self.hand_grasping = True
