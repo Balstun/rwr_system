@@ -12,9 +12,14 @@ def generate_launch_description():
         default_value='',
         description='The ckpt path of the model to load. There should be `config.yaml` in its directory or parent directory'
     )
-
+    no_segmentation_policy_ckpt_arg = DeclareLaunchArgument(
+        'no_segmentation_policy_ckpt_path',
+        default_value='',
+        description='The no segmentation ckpt path of the model to load. There should be `config.yaml` in its directory or parent directory'
+    )
     # Use LaunchConfiguration to capture the values passed via command line
     policy_ckpt_path = LaunchConfiguration('policy_ckpt_path')
+    no_segmentation_policy_ckpt_path = LaunchConfiguration('no_segmentation_policy_ckpt_path')
 
     # Define the node with parameters from the launch arguments
     policy_node = Node(
@@ -29,12 +34,14 @@ def generate_launch_description():
             'camera_names': [
                 "oakd_front_view_images", "oakd_side_view_images", "oakd_wrist_view_images"
             ],
-            "policy_ckpt_path": policy_ckpt_path
+            "policy_ckpt_path": policy_ckpt_path,
+            "no_segmentation_policy_ckpt_path": no_segmentation_policy_ckpt_path
          }]
     )
 
     # Return the LaunchDescription with all the launch arguments and nodes
     return LaunchDescription([
         policy_ckpt_arg,
+        no_segmentation_policy_ckpt_arg,
         policy_node
 ])

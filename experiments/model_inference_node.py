@@ -12,6 +12,8 @@ from copy import deepcopy
 from cv_bridge import CvBridge, CvBridgeError
 import tf2_ros
 from threading import Lock
+from custom_interfaces.srv import GetSegmentationMask
+from typing import Tuple
 
 import torch
 import yaml
@@ -43,6 +45,7 @@ class PolicyPlayerAgent(Node):
         self.declare_parameter("camera_topics", rclpy.Parameter.Type.STRING_ARRAY)
         self.declare_parameter("camera_names", rclpy.Parameter.Type.STRING_ARRAY)
         self.declare_parameter("policy_ckpt_path", "")   # assume the policy ckpt is saved with its config
+        self.declare_parameter("no_segmentation_policy_ckpt_path", "")   # assume the policy ckpt is saved with its config
         self.declare_parameter("hand_qpos_dim", 16) # The dimension of the hand_qpos, we need this because we need to broadcast an all zero command to the hand at the beginning
         self.camera_topics = self.get_parameter("camera_topics").value
         self.camera_names = self.get_parameter("camera_names").value
@@ -54,6 +57,8 @@ class PolicyPlayerAgent(Node):
         self.middle_data = None
         self.ring_data = None
         self.pinky_data = None
+        self.use_segmentation_policy = True
+        self.tray_segmentation_image = None
         
         self.lock = Lock()
 
@@ -96,11 +101,32 @@ class PolicyPlayerAgent(Node):
             for camera_topic, camera_name in zip(self.camera_topics, self.camera_names)
         ]
         
+        # self.segmentation_client = self.create_client(AddTwoInts, 'add_two_ints')
+        # while not self.cli.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('service not available, waiting again...')
+        # self.req = AddTwoInts.Request()
+
+        # def send_request(self, a, b):
+        #     self.req.a = a
+        #     self.req.b = b
+        #     self.future = self.cli.call_async(self.req)
+        #     rclpy.spin_until_future_complete(self, self.future)
+        #     return self.future.result()
+
+        self.tray_segmentation_mask_publisher = self.create_publisher(
+            Image, "/segmentation/tray_segmentation_mask", 10
+        )
+
+        self.publish_segmentation_mask_timer = self.create_timer(0.1, self.segmentation_mask_timer_callback)
+
         self.bridge = CvBridge()
         self.current_wrist_state = None
         self.current_hand_state = None
 
-        self.policy = get_policy_from_ckpt(self.policy_ckpt_path)
+        if self.use_segmentation_policy:
+            self.policy = get_policy_from_ckpt(self.policy_ckpt_path)
+        else:
+            self.policy = get_policy_from_ckpt(self.no_segmentation_policy_ckpt_path)
         self.policy.reset_policy()
         self.policy_run = self.create_timer(0.05, self.run_policy_cb) # 20hz
 
@@ -118,6 +144,26 @@ class PolicyPlayerAgent(Node):
         self.arm_publisher.publish(franka_init_pose)
 
 
+    def get_segmentation_masks(self) -> Tuple[Image, Image, Image]:
+        client = self.create_client(GetSegmentationMask, "/segment_svc")
+        while not client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = GetSegmentationMask.Request()
+
+        resp: GetSegmentationMask.Response = client.call(request)
+
+        if resp.success:
+            self.tray_segmentation_image = resp.tray_mask.data
+        else:
+            self.use_segmentation_policy = False
+        raise Exception("Error in calling segmentation service")
+    
+    def segmentation_mask_timer_callback(self):
+        if self.use_segmentation_policy:
+            self.tray_segmentation_mask_publisher.publish(self.tray_segmentation_image)
+
+    
     def publish(self, wrist_policy: np.ndarray, hand_policy: np.ndarray):
         # publish hand policy
         hand_msg = numpy_to_float32_multiarray(hand_policy)
@@ -184,6 +230,8 @@ class PolicyPlayerAgent(Node):
         obs_dict['qpos_franka'] = qpos_franka
         obs_dict['qpos_hand'] = qpos_hand
         obs_dict.update(sensor_obs)
+        if self.use_segmentation_policy:
+            obs_dict['tray_segmentation_image'] = self.tray_segmentation_image
         return get_data_success, obs_dict
     
     def run_policy_cb(self):
@@ -219,6 +267,7 @@ class PolicyPlayerAgent(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = PolicyPlayerAgent()
+    node.get_segmentation_masks()
     rclpy.spin(node)
     rclpy.shutdown()
     
