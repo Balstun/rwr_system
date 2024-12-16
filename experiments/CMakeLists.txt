@@ -37,6 +37,11 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  validate_inference_node.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 
 # install the launch file
 install(DIRECTORY

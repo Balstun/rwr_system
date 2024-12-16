@@ -17,6 +17,12 @@ def generate_launch_description():
     policy_ckpt_path = LaunchConfiguration('policy_ckpt_path')
 
     # Define the node with parameters from the launch arguments
+    validate_node = Node(
+        package='experiments',
+        executable='validate_inference_node.py',
+        name="validate_inference",
+        output='screen'
+    )
     policy_node = Node(
         package='experiments',
         executable='model_inference_node.py',
@@ -36,5 +42,6 @@ def generate_launch_description():
     # Return the LaunchDescription with all the launch arguments and nodes
     return LaunchDescription([
         policy_ckpt_arg,
-        policy_node
+        policy_node,
+        validate_node
 ])
