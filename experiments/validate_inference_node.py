@@ -19,6 +19,7 @@ class ValidateInference(Node):
         super().__init__("validate_inference")
 
         self.hand_grasping = False
+        self.release_delay = 0
         # publishes to franka/end_effector_pose_cmd
         self.arm_publisher = self.create_publisher(
             PoseStamped, "/franka/end_effector_pose_cmd", 10
@@ -41,6 +42,8 @@ class ValidateInference(Node):
         msg_copy = deepcopy(msg)
         if not self.hand_grasping:
             msg_copy.pose.position.z += STATIC_OFFSET
+            if self.release_delay > 0:
+                msg_copy.pose.position.z += STATIC_OFFSET / self.release_delay
         self.arm_publisher.publish(msg_copy)
 
     def joint_positions_callback(self, msg: Float32MultiArray):
@@ -54,7 +57,7 @@ class ValidateInference(Node):
                     # Ideally the first time it has released the object.
                     self.hand_grasping = False
                     self.release_delay = 0
-                else self.hand_grasping:
+                else:
                     self.release_delay += 1
 
 
